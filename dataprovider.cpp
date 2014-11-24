@@ -85,9 +85,24 @@ std::vector<std::string> stringSplit(std::string s, const std::string &delim, bo
 
 bool DataProvider::parseLatestReport()
 {
-    mapPopByCoord.clear();
+    // parse latest report:
+    //  1) time_stamp
+    //  2) placement_by_core.rpt
+    //  3) placement_by_vertex.rpt
 
-    // parse latest report
+    // 1) time_stamp
+    reportID.clear();
+    std::ifstream reportFile1("/home/sjentzsch/HBP/SpiNNaker/spinnaker_package_jun14/reports/latest/time_stamp");
+    if(reportFile1.is_open())
+    {
+        std::getline(reportFile1, reportID);
+        reportFile1.close();
+    }
+    else
+        return false;
+
+    // 2) placement_by_core.rpt
+    mapPopByCoord.clear();
     std::ifstream reportFile("/home/sjentzsch/HBP/SpiNNaker/spinnaker_package_jun14/reports/latest/placement_by_core.rpt");
     std::string strReport;
     if(reportFile.is_open())
@@ -95,8 +110,6 @@ bool DataProvider::parseLatestReport()
         std::stringstream buffer;
         buffer << reportFile.rdbuf();
         strReport = buffer.str();
-
-        qDebug() << "latest report successfully opened!";
         reportFile.close();
     }
     else
@@ -142,6 +155,36 @@ bool DataProvider::parseLatestReport()
         }
     }
 
+    // 3) placement_by_vertex.rpt
+    vecVertices.clear();
+    std::ifstream reportFile3("/home/sjentzsch/HBP/SpiNNaker/spinnaker_package_jun14/reports/latest/placement_by_vertex.rpt");
+    std::string strReport3;
+    if(reportFile3.is_open())
+    {
+        std::stringstream buffer;
+        buffer << reportFile3.rdbuf();
+        strReport3 = buffer.str();
+        reportFile3.close();
+    }
+    else
+        return false;
+
+    // split by vertices
+    QStringList strVertices = QString::fromStdString(strReport3).split(QString("**** Vertex:"), QString::SkipEmptyParts);
+    strVertices.removeFirst();
+    for(QStringList::Iterator strVertex = strVertices.begin(); strVertex != strVertices.end(); ++strVertex)
+    {
+        // read in vertex infos
+        QRegExp regVertexInfo("^\\s*'(.*)'\\s*Model:\\s(.*\\S)\\s*Pop\\ssz:\\s(\\d+)\\s*Sub-vertices:\\s*(?:Slice\\s(\\d+):(\\d+)\\s\\((\\d+)\\satoms\\)\\son\\score\\s\\((\\d+),\\s(\\d+),\\s(\\d+)\\)\\s*)+$");
+        if(regVertexInfo.indexIn(*strVertex) < 0)
+            return false;
+
+        vecVertices.push_back(VertexInfo(regVertexInfo.cap(1).toStdString(), regVertexInfo.cap(2).toStdString(), regVertexInfo.cap(3).toUInt()));
+
+        qDebug() << "Added Vertex" << regVertexInfo.cap(1) << "of model" << regVertexInfo.cap(2) << "with population size" << regVertexInfo.cap(3);
+    }
+    qDebug() << "=> we got" << QString::number(vecVertices.size()) << "vertices.";
+
     return true;
 }
 
@@ -149,14 +192,37 @@ void DataProvider::readData()
 {
     while(udpSocket->hasPendingDatagrams())
     {
-         QByteArray datagram;
-         datagram.resize(udpSocket->pendingDatagramSize());
+        QByteArray datagram;
+        datagram.resize(udpSocket->pendingDatagramSize());
 
-         QHostAddress senderAddress;
-         quint16 senderPort;
-         udpSocket->readDatagram(datagram.data(), datagram.size(), &senderAddress, &senderPort);    // TODO: might fail -> handle the case?
+        QHostAddress senderAddress;
+        quint16 senderPort;
+        udpSocket->readDatagram(datagram.data(), datagram.size(), &senderAddress, &senderPort);    // TODO: might fail -> handle the case?
 
-         qDebug() << QDateTime::currentDateTime().toString("hh:mm:ss.zzz") << ": Received a package from " << senderAddress.toString() << " port " << QString::number(senderPort) << " of size " << QString::number(datagram.size()) << ": " << datagram.toHex();
+        qDebug() << QDateTime::currentDateTime().toString("hh:mm:ss.zzz") << ": Received a package from " << senderAddress.toString() << " port " << QString::number(senderPort) << " of size " << QString::number(datagram.size()) << ": " << datagram.toHex();
+
+        QDataStream dataStream(datagram.mid(14));
+        dataStream.setByteOrder(QDataStream::LittleEndian);
+        quint32 scpTime, scpNumSpikes, scpArg3;
+        dataStream >> scpTime;
+        dataStream >> scpNumSpikes;
+        dataStream >> scpArg3;
+        qDebug() << "DATA EXTRACT: " << scpTime << " | " << scpNumSpikes << "|" << scpArg3;
+
+        for(quint32 i=0; i<scpNumSpikes; i++)
+        {
+            // TODO: does this always produce the right results in the end? what if bytes are swapped in another way (e.g. twice the half)?
+            quint8 dataChipX, dataChipY, dataCoreID, dataS;
+            quint16 dataLeftover, dataNeuronID;
+            dataStream >> dataLeftover;
+            dataS = (dataLeftover >> 11) & 0x10;
+            dataCoreID = (dataLeftover >> 11) & 0xF;
+            dataNeuronID = (dataLeftover & 0x7FF);
+            dataStream >> dataChipY;
+            dataStream >> dataChipX;
+
+            qDebug() << "=> Spike: " << dataChipX << " | " << dataChipY << " | " << dataS << " | " << dataCoreID << " | " << dataNeuronID << " | " << QString::fromStdString(mapPopByCoord.at(std::make_tuple(dataChipX, dataChipY, dataCoreID)).model) << " | " << QString::fromStdString(mapPopByCoord.at(std::make_tuple(dataChipX, dataChipY, dataCoreID)).name);
+        }
     }
 }
 

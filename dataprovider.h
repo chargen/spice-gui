@@ -5,6 +5,7 @@
 #include <map>
 #include <tuple>
 #include <string>
+#include <vector>
 
 #include <QObject>
 #include <QUdpSocket>
@@ -16,6 +17,19 @@ class DataProvider : public QObject
     Q_OBJECT
 
 public:
+    // on each core lies at most one Subvertex
+
+    struct VertexInfo {
+        VertexInfo()
+            : name(""), model(""), popSize(0) {}
+        VertexInfo(std::string name_, std::string model_, uint popSize_)
+            : name(name_), model(model_), popSize(popSize_) {}
+
+        std::string name;
+        std::string model;
+        uint popSize;
+    };
+
     struct SubvertexInfo {
         SubvertexInfo()
             : name(""), model(""), popSize(0), sliceStart(0), sliceEnd(0), sliceLength(0) {}
@@ -56,7 +70,10 @@ private:
     QUdpSocket *udpSocket;
     QHostAddress* host;
     quint16 port;
+
     std::map< std::tuple< size_t, size_t, size_t >, SubvertexInfo > mapPopByCoord;
+    std::string reportID;
+    std::vector< VertexInfo > vecVertices;
 };
 
 #endif // DATAPROVIDER_H

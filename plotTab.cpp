@@ -26,21 +26,22 @@ PlotTab::PlotTab(QWidget *parent) :
     ui->spikePlot->replot();*/
 
     // include this section to fully disable antialiasing for higher performance:
-    /*
+/*
     ui->spikePlot->setNotAntialiasedElements(QCP::aeAll);
     QFont font;
     font.setStyleStrategy(QFont::NoAntialias);
     ui->spikePlot->xAxis->setTickLabelFont(font);
     ui->spikePlot->yAxis->setTickLabelFont(font);
     ui->spikePlot->legend->setFont(font);
-    */
+*/
     ui->spikePlot->addGraph(); // blue line
     ui->spikePlot->graph(0)->setPen(QPen(Qt::blue));
-    ui->spikePlot->graph(0)->setBrush(QBrush(QColor(240, 255, 200)));
-    ui->spikePlot->graph(0)->setAntialiasedFill(false);
+    ui->spikePlot->graph(0)->setLineStyle(QCPGraph::lsNone);
+    ui->spikePlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 5));
     ui->spikePlot->addGraph(); // red line
     ui->spikePlot->graph(1)->setPen(QPen(Qt::red));
-    ui->spikePlot->graph(0)->setChannelFillGraph(ui->spikePlot->graph(1));
+    ui->spikePlot->graph(1)->setLineStyle(QCPGraph::lsNone);
+    ui->spikePlot->graph(1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 5));
 
     ui->spikePlot->addGraph(); // blue dot
     ui->spikePlot->graph(2)->setPen(QPen(Qt::blue));
@@ -54,7 +55,7 @@ PlotTab::PlotTab(QWidget *parent) :
     ui->spikePlot->xAxis->setTickLabelType(QCPAxis::ltDateTime);
     ui->spikePlot->xAxis->setDateTimeFormat("hh:mm:ss");
     ui->spikePlot->xAxis->setAutoTickStep(false);
-    ui->spikePlot->xAxis->setTickStep(2);
+    ui->spikePlot->xAxis->setTickStep(1);
     ui->spikePlot->axisRect()->setupFullAxesBox();
 
     // make left and bottom axes transfer their ranges to right and top axes:
@@ -63,7 +64,37 @@ PlotTab::PlotTab(QWidget *parent) :
 
     // setup a timer that repeatedly calls MainWindow::realtimeDataSlot:
     connect(&dataTimer, SIGNAL(timeout()), this, SLOT(realtimeDataSlot()));
-    dataTimer.start(0); // Interval 0 means to refresh as fast as possible
+    dataTimer.start(15); // Interval 0 means to refresh as fast as possible
+
+    /*
+    QVector<QCPScatterStyle::ScatterShape> shapes;
+    shapes << QCPScatterStyle::ssCross;
+    shapes << QCPScatterStyle::ssPlus;
+    shapes << QCPScatterStyle::ssCircle;
+    shapes << QCPScatterStyle::ssDisc;
+    shapes << QCPScatterStyle::ssSquare;
+    shapes << QCPScatterStyle::ssDiamond;
+    shapes << QCPScatterStyle::ssStar;
+    shapes << QCPScatterStyle::ssTriangle;
+    shapes << QCPScatterStyle::ssTriangleInverted;
+    shapes << QCPScatterStyle::ssCrossSquare;
+    shapes << QCPScatterStyle::ssPlusSquare;
+    shapes << QCPScatterStyle::ssCrossCircle;
+    shapes << QCPScatterStyle::ssPlusCircle;
+    shapes << QCPScatterStyle::ssPeace;
+    shapes << QCPScatterStyle::ssCustom;
+    // set scatter style:
+    if(shapes.at(i) != QCPScatterStyle::ssCustom)
+    {
+        customPlot->graph()->setScatterStyle(QCPScatterStyle(shapes.at(i), 10));
+    }
+    else
+    {
+        QPainterPath customScatterPath;
+        for(int i=0; i<3; ++i)
+            customScatterPath.cubicTo(qCos(2*M_PI*i/3.0)*9, qSin(2*M_PI*i/3.0)*9, qCos(2*M_PI*(i+0.9)/3.0)*9, qSin(2*M_PI*(i+0.9)/3.0)*9, 0, 0);
+        customPlot->graph()->setScatterStyle(QCPScatterStyle(customScatterPath, QPen(), QColor(40, 70, 255, 50), 10));
+    }*/
 }
 
 PlotTab::~PlotTab()
@@ -78,45 +109,57 @@ void PlotTab::setMainWindow(MainWindow* mainWindow_)
 
 void PlotTab::realtimeDataSlot()
 {
-  // calculate two new data points:
-  double key = QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0;
-  static double lastPointKey = 0;
-  if (key-lastPointKey > 0.01) // at most add point every 10 ms
-  {
-    double value0 = qSin(key); //sin(key*1.6+cos(key*1.7)*2)*10 + sin(key*1.2+0.56)*20 + 26;
-    double value1 = qCos(key); //sin(key*1.3+cos(key*1.2)*1.2)*7 + sin(key*0.9+0.26)*24 + 26;
-    // add data to lines:
-    ui->spikePlot->graph(0)->addData(key, value0);
-    ui->spikePlot->graph(1)->addData(key, value1);
-    // set data of dots:
-    ui->spikePlot->graph(2)->clearData();
-    ui->spikePlot->graph(2)->addData(key, value0);
-    ui->spikePlot->graph(3)->clearData();
-    ui->spikePlot->graph(3)->addData(key, value1);
-    // remove data of lines that's outside visible range:
-    ui->spikePlot->graph(0)->removeDataBefore(key-8);
-    ui->spikePlot->graph(1)->removeDataBefore(key-8);
-    // rescale value (vertical) axis to fit the current data:
-    ui->spikePlot->graph(0)->rescaleValueAxis();
-    ui->spikePlot->graph(1)->rescaleValueAxis(true);
-    lastPointKey = key;
-  }
-  // make key axis range scroll with the data (at a constant range size of 8):
-  ui->spikePlot->xAxis->setRange(key+0.25, 8, Qt::AlignRight);
-  ui->spikePlot->replot();
+    // calculate two new data points:
+    double key = QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0;
+    static double lastPointKey = 0;
+    if (key-lastPointKey > 0.01) // at most add point every 10 ms
+    {
+        double value0 = 1;//qSin(key); //sin(key*1.6+cos(key*1.7)*2)*10 + sin(key*1.2+0.56)*20 + 26;
+        double value1 = 2;//qCos(key); //sin(key*1.3+cos(key*1.2)*1.2)*7 + sin(key*0.9+0.26)*24 + 26;
 
-  // calculate frames per second:
-  static double lastFpsKey;
-  static int frameCount;
-  ++frameCount;
-  if (key-lastFpsKey > 2) // average fps over 2 seconds
-  {
-    mainWindow->showMessageStatusBar(
-          QString("%1 FPS, Total Data points: %2")
-          .arg(frameCount/(key-lastFpsKey), 0, 'f', 0)
-          .arg(ui->spikePlot->graph(0)->data()->count()+ui->spikePlot->graph(1)->data()->count())
-          , 0);
-    lastFpsKey = key;
-    frameCount = 0;
-  }
+        bool spike0 = rand()%100 < 5;
+        bool spike1 = rand()%100 < 3;
+
+        // add data to lines:
+        if(spike0)
+            ui->spikePlot->graph(0)->addData(key, value0);
+        if(spike1)
+            ui->spikePlot->graph(1)->addData(key, value1);
+        // set data of dots:
+        if(spike0)
+        {
+            ui->spikePlot->graph(2)->clearData();
+            ui->spikePlot->graph(2)->addData(key, value0);
+        }
+        if(spike1)
+        {
+            ui->spikePlot->graph(3)->clearData();
+            ui->spikePlot->graph(3)->addData(key, value1);
+        }
+        // remove data of lines that's outside visible range:
+        ui->spikePlot->graph(0)->removeDataBefore(key-10);
+        ui->spikePlot->graph(1)->removeDataBefore(key-10);
+        // rescale value (vertical) axis to fit the current data:
+        ui->spikePlot->graph(0)->rescaleValueAxis();
+        ui->spikePlot->graph(1)->rescaleValueAxis(true);
+        lastPointKey = key;
+    }
+    // make key axis range scroll with the data (at a constant range size of 10):
+    ui->spikePlot->xAxis->setRange(key+0.25, 10, Qt::AlignRight);
+    ui->spikePlot->replot();
+
+    // calculate frames per second:
+    static double lastFpsKey;
+    static int frameCount;
+    ++frameCount;
+    if (key-lastFpsKey > 2) // average fps over 2 seconds
+    {
+        mainWindow->showMessageStatusBar(
+            QString("%1 FPS, Total Data points: %2")
+            .arg(frameCount/(key-lastFpsKey), 0, 'f', 0)
+            .arg(ui->spikePlot->graph(0)->data()->count()+ui->spikePlot->graph(1)->data()->count())
+            , 0);
+        lastFpsKey = key;
+        frameCount = 0;
+    }
 }
