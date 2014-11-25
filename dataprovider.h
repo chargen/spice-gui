@@ -12,6 +12,8 @@
 
 class MainWindow;
 
+class QCustomPlot;
+
 class DataProvider : public QObject
 {
     Q_OBJECT
@@ -53,6 +55,8 @@ public:
 
     bool parseLatestReport();
 
+    void setSpikePlot(QCustomPlot *spikePlot_);
+
 signals:
 
 public slots:
@@ -74,6 +78,8 @@ private:
     std::map< std::tuple< size_t, size_t, size_t >, SubvertexInfo > mapPopByCoord;
     std::string reportID;
     std::vector< VertexInfo > vecVertices;
+
+    QCustomPlot *spikePlot;
 };
 
 #endif // DATAPROVIDER_H

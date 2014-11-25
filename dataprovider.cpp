@@ -1,6 +1,7 @@
 #include "dataprovider.h"
 #include "settingsdialog.h"
 #include "mainwindow.h"
+#include "qcustomplot.h"
 
 #include <fstream>
 #include <sstream>
@@ -19,6 +20,9 @@ DataProvider::DataProvider(QObject *parent) :
     udpSocket = new QUdpSocket(this);
     host = NULL;
     port = 0;
+
+    this->mainWindow = NULL;
+    this->spikePlot = NULL;
 
     connect(udpSocket, SIGNAL(readyRead()), this, SLOT(readData()));
     connect(udpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(displayError(QAbstractSocket::SocketError)));
@@ -221,9 +225,28 @@ void DataProvider::readData()
             dataStream >> dataChipY;
             dataStream >> dataChipX;
 
-            qDebug() << "=> Spike: " << dataChipX << " | " << dataChipY << " | " << dataS << " | " << dataCoreID << " | " << dataNeuronID << " | " << QString::fromStdString(mapPopByCoord.at(std::make_tuple(dataChipX, dataChipY, dataCoreID)).model) << " | " << QString::fromStdString(mapPopByCoord.at(std::make_tuple(dataChipX, dataChipY, dataCoreID)).name);
+            QString dataModel = QString::fromStdString(mapPopByCoord.at(std::make_tuple(dataChipX, dataChipY, dataCoreID)).model);
+            QString dataName = QString::fromStdString(mapPopByCoord.at(std::make_tuple(dataChipX, dataChipY, dataCoreID)).name);
+
+            qDebug() << "=> Spike: " << dataChipX << " | " << dataChipY << " | " << dataS << " | " << dataCoreID << " | " << dataNeuronID << " | " << dataModel << " | " << dataName;
+
+            if(this->spikePlot != NULL)
+            {
+                double key = QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0;
+                if(dataName == "mySourceE")
+                    this->spikePlot->graph(0)->addData(key, 0.0);
+                else if(dataName == "mySourceI")
+                    this->spikePlot->graph(1)->addData(key, 1.0);
+                else if(dataName == "myFinalCell")
+                    this->spikePlot->graph(2)->addData(key, 2.0);
+            }
         }
     }
+}
+
+void DataProvider::setSpikePlot(QCustomPlot *spikePlot_)
+{
+    this->spikePlot = spikePlot_;
 }
 
 void DataProvider::displayError(QAbstractSocket::SocketError socketError)
