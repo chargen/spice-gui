@@ -28,6 +28,7 @@ public:
 
 private slots:
   void realtimeDataSlot();
+  void reloadReport();
 
 private:
     Ui::PlotTab *ui;

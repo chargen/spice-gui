@@ -20,7 +20,6 @@ MainWindow::MainWindow(QWidget *parent) :
     DataProvider::getInstance()->setMainWindow(this);
 
     DataProvider::getInstance()->connectListener(); // TODO: move somewhere else !!
-    DataProvider::getInstance()->parseLatestReport(); // TODO: move somewhere else !!
 
     ui->actionConnect->setEnabled(true);
     ui->actionDisconnect->setEnabled(false);

@@ -22,9 +22,9 @@
     </widget>
    </item>
    <item row="0" column="0">
-    <widget class="QPushButton" name="pushButton">
+    <widget class="QPushButton" name="reloadReportButton">
      <property name="text">
-      <string>SpiNNaker Explosion (silent)</string>
+      <string>Reload Latest Report</string>
      </property>
     </widget>
    </item>

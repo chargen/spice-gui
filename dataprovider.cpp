@@ -91,8 +91,9 @@ bool DataProvider::parseLatestReport()
 {
     // parse latest report:
     //  1) time_stamp
-    //  2) placement_by_core.rpt
-    //  3) placement_by_vertex.rpt
+    //  2) placement_by_vertex.rpt
+    //  3) placement_by_core.rpt
+
 
     // 1) time_stamp
     reportID.clear();
@@ -105,7 +106,42 @@ bool DataProvider::parseLatestReport()
     else
         return false;
 
-    // 2) placement_by_core.rpt
+
+    // 2) placement_by_vertex.rpt
+    vecVertices.clear();
+    std::ifstream reportFile3("/home/sjentzsch/HBP/SpiNNaker/spinnaker_package_jun14/reports/latest/placement_by_vertex.rpt");
+    std::string strReport3;
+    if(reportFile3.is_open())
+    {
+        std::stringstream buffer;
+        buffer << reportFile3.rdbuf();
+        strReport3 = buffer.str();
+        reportFile3.close();
+    }
+    else
+        return false;
+
+    // split by vertices
+    QStringList strVertices = QString::fromStdString(strReport3).split(QString("**** Vertex:"), QString::SkipEmptyParts);
+    strVertices.removeFirst();
+    uint currGraphOffset = 0;
+    for(QStringList::Iterator strVertex = strVertices.begin(); strVertex != strVertices.end(); ++strVertex)
+    {
+        // read in vertex infos
+        QRegExp regVertexInfo("^\\s*'(.*)'\\s*Model:\\s(.*\\S)\\s*Pop\\ssz:\\s(\\d+)\\s*Sub-vertices:\\s*(?:Slice\\s(\\d+):(\\d+)\\s\\((\\d+)\\satoms\\)\\son\\score\\s\\((\\d+),\\s(\\d+),\\s(\\d+)\\)\\s*)+$");
+        if(regVertexInfo.indexIn(*strVertex) < 0)
+            return false;
+
+        vecVertices.push_back(VertexInfo(vecVertices.size(), currGraphOffset, regVertexInfo.cap(1).toStdString(), regVertexInfo.cap(2).toStdString(), regVertexInfo.cap(3).toUInt()));
+
+        currGraphOffset += vecVertices.back().popSize;
+
+        qDebug() << "Added Vertex" << regVertexInfo.cap(1) << "of model" << regVertexInfo.cap(2) << "with population size" << regVertexInfo.cap(3);
+    }
+    qDebug() << "=> we got" << QString::number(vecVertices.size()) << "vertices.";
+
+
+    // 3) placement_by_core.rpt
     mapPopByCoord.clear();
     std::ifstream reportFile("/home/sjentzsch/HBP/SpiNNaker/spinnaker_package_jun14/reports/latest/placement_by_core.rpt");
     std::string strReport;
@@ -155,39 +191,51 @@ bool DataProvider::parseLatestReport()
                 return false;
 
             qDebug() << "New entry for (chip_x, chip_y, core_id) = (" << chip_x << ", " << chip_y << ", " << core_id << "): SubvertexInfo(name, model, popSize, sliceStart, sliceEnd, sliceLength) = (" << QString::fromStdString(sviName) << ", " << QString::fromStdString(sviModel) << ", " << QString::number(sviPopSize) << ", " << QString::number(sviSliceStart) << ", " << QString::number(sviSliceEnd) << ", " << QString::number(sviSliceLength) << ")";
-            mapPopByCoord[std::make_tuple(chip_x, chip_y, core_id)] = SubvertexInfo(sviName, sviModel, sviPopSize, sviSliceStart, sviSliceEnd, sviSliceLength);
+
+            VertexInfo* vertex = NULL;
+            for(size_t i=0; i<vecVertices.size(); i++)
+            {
+                if(vecVertices.at(i).name == sviName && vecVertices.at(i).model == sviModel && vecVertices.at(i).popSize == sviPopSize)
+                    vertex = &vecVertices.at(i);
+            }
+            if(vertex == NULL)
+                return false;
+
+            mapPopByCoord[std::make_tuple(chip_x, chip_y, core_id)] = SubvertexInfo(vertex, sviSliceStart, sviSliceEnd, sviSliceLength);
         }
     }
 
-    // 3) placement_by_vertex.rpt
-    vecVertices.clear();
-    std::ifstream reportFile3("/home/sjentzsch/HBP/SpiNNaker/spinnaker_package_jun14/reports/latest/placement_by_vertex.rpt");
-    std::string strReport3;
-    if(reportFile3.is_open())
+    // prepare the graphs
+    this->spikePlot->clearGraphs();
+    for(size_t i=0; i<vecVertices.size(); i++)
     {
-        std::stringstream buffer;
-        buffer << reportFile3.rdbuf();
-        strReport3 = buffer.str();
-        reportFile3.close();
-    }
-    else
-        return false;
+        Qt::GlobalColor color = Qt::black;
+        if(i == 1) color = Qt::red;
+        else if(i == 2) color = Qt::blue;
+        else if(i == 3) color = Qt::darkGreen;
 
-    // split by vertices
-    QStringList strVertices = QString::fromStdString(strReport3).split(QString("**** Vertex:"), QString::SkipEmptyParts);
-    strVertices.removeFirst();
-    for(QStringList::Iterator strVertex = strVertices.begin(); strVertex != strVertices.end(); ++strVertex)
+        for(size_t u=0; u<vecVertices.at(i).popSize; u++)
+        {
+            this->spikePlot->addGraph();
+            this->spikePlot->graph(this->spikePlot->graphCount()-1)->setPen(QPen(color));
+            this->spikePlot->graph(this->spikePlot->graphCount()-1)->setLineStyle(QCPGraph::lsNone);
+            this->spikePlot->graph(this->spikePlot->graphCount()-1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 5));
+        }
+    }
+    QVector<double> tickVector;
+    QVector<QString> tickVectorLabels;
+    for(int i=0; i<this->spikePlot->graphCount(); i++)
+        tickVector.push_back(i);
+    for(size_t v=0; v<vecVertices.size(); v++)
     {
-        // read in vertex infos
-        QRegExp regVertexInfo("^\\s*'(.*)'\\s*Model:\\s(.*\\S)\\s*Pop\\ssz:\\s(\\d+)\\s*Sub-vertices:\\s*(?:Slice\\s(\\d+):(\\d+)\\s\\((\\d+)\\satoms\\)\\son\\score\\s\\((\\d+),\\s(\\d+),\\s(\\d+)\\)\\s*)+$");
-        if(regVertexInfo.indexIn(*strVertex) < 0)
-            return false;
-
-        vecVertices.push_back(VertexInfo(regVertexInfo.cap(1).toStdString(), regVertexInfo.cap(2).toStdString(), regVertexInfo.cap(3).toUInt()));
-
-        qDebug() << "Added Vertex" << regVertexInfo.cap(1) << "of model" << regVertexInfo.cap(2) << "with population size" << regVertexInfo.cap(3);
+        tickVectorLabels.push_back(QString::fromStdString(vecVertices.at(v).name)+" "+QString::number(1));
+        for(uint p=1; p<vecVertices.at(v).popSize; p++)
+            tickVectorLabels.push_back(QString::number(p+1));
     }
-    qDebug() << "=> we got" << QString::number(vecVertices.size()) << "vertices.";
+    this->spikePlot->yAxis->setTickVector(tickVector);
+    this->spikePlot->yAxis->setTickVectorLabels(tickVectorLabels);
+    this->spikePlot->yAxis->setRange(0, this->spikePlot->graphCount());
+    this->spikePlot->replot();
 
     return true;
 }
@@ -225,20 +273,15 @@ void DataProvider::readData()
             dataStream >> dataChipY;
             dataStream >> dataChipX;
 
-            QString dataModel = QString::fromStdString(mapPopByCoord.at(std::make_tuple(dataChipX, dataChipY, dataCoreID)).model);
-            QString dataName = QString::fromStdString(mapPopByCoord.at(std::make_tuple(dataChipX, dataChipY, dataCoreID)).name);
+            SubvertexInfo* subvertex = &mapPopByCoord.at(std::make_tuple(dataChipX, dataChipY, dataCoreID));
 
-            qDebug() << "=> Spike: " << dataChipX << " | " << dataChipY << " | " << dataS << " | " << dataCoreID << " | " << dataNeuronID << " | " << dataModel << " | " << dataName;
+            qDebug() << "=> Spike: " << dataChipX << " | " << dataChipY << " | " << dataS << " | " << dataCoreID << " | " << dataNeuronID << " | " << QString::fromStdString(subvertex->vertex->model) << " | " << QString::fromStdString(subvertex->vertex->name);
 
             if(this->spikePlot != NULL)
             {
                 double key = QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0;
-                if(dataName == "mySourceE")
-                    this->spikePlot->graph(0)->addData(key, 0.0);
-                else if(dataName == "mySourceI")
-                    this->spikePlot->graph(1)->addData(key, 1.0);
-                else if(dataName == "myFinalCell")
-                    this->spikePlot->graph(2)->addData(key, 2.0);
+                uint graphID = subvertex->vertex->graphOffset + dataNeuronID;
+                this->spikePlot->graph(graphID)->addData(key, graphID);
             }
         }
     }
