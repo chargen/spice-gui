@@ -4,6 +4,7 @@
 #include <QtSerialPort/QSerialPortInfo>
 #include <QIntValidator>
 #include <QLineEdit>
+#include <QFileDialog>
 
 QT_USE_NAMESPACE
 
@@ -14,6 +15,10 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
     ui(new Ui::SettingsDialog)
 {
     ui->setupUi(this);
+
+    spinnakerPackageDir = new QDir("/home");
+
+    connect(ui->spinnakerPackageButton, SIGNAL(clicked()), this, SLOT(browseSpinnakerPackage()));
 
     intValidator = new QIntValidator(0, 4000000, this);
 
@@ -35,6 +40,8 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
     ui->flowControlBox->setCurrentIndex(1);
     ui->localEchoCheckBox->setChecked(false);
     ui->liveSpikePortEdit->setText(QString::number(17895));
+    ui->spinnakerPackageEdit->setText("/home/sjentzsch/HBP/SpiNNaker/spinnaker_package_jun14");
+    spinnakerPackageDir = new QDir(ui->spinnakerPackageEdit->text());
 
     updateSettings();
 }
@@ -149,6 +156,8 @@ void SettingsDialog::fillPortsInfo()
 
 void SettingsDialog::updateSettings()
 {
+    currentSettings.spinPackPath = ui->spinnakerPackageEdit->text();
+
     currentSettings.name = ui->serialPortInfoListBox->currentText();
 
     if (ui->baudRateBox->currentIndex() == 4) {
@@ -179,4 +188,14 @@ void SettingsDialog::updateSettings()
 
     currentSettings.liveSpikeAddress = QHostAddress(ui->liveSpikeAddressBox->itemData(ui->liveSpikeAddressBox->currentIndex()).toString());
     currentSettings.liveSpikePort = ui->liveSpikePortEdit->text().toUShort();
+}
+
+void SettingsDialog::browseSpinnakerPackage()
+{
+    QString path = QFileDialog::getExistingDirectory(this, tr("Set SpiNNaker-Package Directory"), spinnakerPackageDir->path(), QFileDialog::ShowDirsOnly);
+    if(!path.isNull())
+    {
+        spinnakerPackageDir->setPath(path);
+        ui->spinnakerPackageEdit->setText(path);
+    }
 }

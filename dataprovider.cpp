@@ -99,10 +99,11 @@ bool DataProvider::parseLatestReport()
     //  2) placement_by_vertex.rpt
     //  3) placement_by_core.rpt
 
+    SettingsDialog::Settings currentSettings = SettingsDialog::getInstance()->settings();
 
     // 1) time_stamp
     reportID.clear();
-    std::ifstream reportFile1("/home/sjentzsch/HBP/SpiNNaker/spinnaker_package_jun14/reports/latest/time_stamp");
+    std::ifstream reportFile1(currentSettings.spinPackPath.toStdString()+"/reports/latest/time_stamp");
     if(reportFile1.is_open())
     {
         std::getline(reportFile1, reportID);
@@ -114,7 +115,7 @@ bool DataProvider::parseLatestReport()
 
     // 2) placement_by_vertex.rpt
     vecVertices.clear();
-    std::ifstream reportFile3("/home/sjentzsch/HBP/SpiNNaker/spinnaker_package_jun14/reports/latest/placement_by_vertex.rpt");
+    std::ifstream reportFile3(currentSettings.spinPackPath.toStdString()+"/reports/latest/placement_by_vertex.rpt");
     std::string strReport3;
     if(reportFile3.is_open())
     {
@@ -148,7 +149,7 @@ bool DataProvider::parseLatestReport()
 
     // 3) placement_by_core.rpt
     mapPopByCoord.clear();
-    std::ifstream reportFile("/home/sjentzsch/HBP/SpiNNaker/spinnaker_package_jun14/reports/latest/placement_by_core.rpt");
+    std::ifstream reportFile(currentSettings.spinPackPath.toStdString()+"/reports/latest/placement_by_core.rpt");
     std::string strReport;
     if(reportFile.is_open())
     {
@@ -249,7 +250,7 @@ void DataProvider::setupReportWatcher()
 {
     watcher = new QFileSystemWatcher(this);
     // use a file as watch-path which is definitely be written after the files we are interested in
-    watcher->addPath("/home/sjentzsch/HBP/SpiNNaker/spinnaker_package_jun14/reports/latest/chip_sdram_usage_by_core.rpt");
+    watcher->addPath(SettingsDialog::getInstance()->settings().spinPackPath+"/reports/latest/chip_sdram_usage_by_core.rpt");
     connect(watcher, SIGNAL(directoryChanged(const QString&)), this, SLOT(reportChanged(const QString&)));
     connect(watcher, SIGNAL(fileChanged(const QString&)), this, SLOT(reportChanged(const QString&)));
 
