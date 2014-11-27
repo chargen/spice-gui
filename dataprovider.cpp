@@ -5,6 +5,8 @@
 
 #include <fstream>
 #include <sstream>
+#include <chrono>
+#include <thread>
 
 #include <QtWidgets>
 #include <QMessageBox>
@@ -24,6 +26,8 @@ DataProvider::DataProvider(QObject *parent) :
     this->mainWindow = NULL;
     this->spikePlot = NULL;
 
+    this->watcher = NULL;
+
     connect(udpSocket, SIGNAL(readyRead()), this, SLOT(readData()));
     connect(udpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(displayError(QAbstractSocket::SocketError)));
 }
@@ -32,6 +36,7 @@ DataProvider::~DataProvider()
 {
     delete host;
     delete udpSocket;
+    delete watcher;
 }
 
 DataProvider* DataProvider::getInstance()
@@ -54,7 +59,7 @@ void DataProvider::connectListener()
     port = SettingsDialog::getInstance()->settings().liveSpikePort;
 
     mainWindow->showMessageStatusBar(QString("Binding Live-Spike-Listener to ") + host->toString() + QString(", port ") + QString::number(port));
-    if(udpSocket->bind(QHostAddress("192.168.240.1"), port))
+    if(udpSocket->bind(*host, port))
         mainWindow->showMessageStatusBar(QString("Binded Live-Spike-Listener to ") + host->toString() + QString(", port ") + QString::number(port));
     else
         mainWindow->showMessageStatusBar(QString("Binding Live-Spike-Listener failed to ") + host->toString() + QString(", port ") + QString::number(port));
@@ -238,6 +243,33 @@ bool DataProvider::parseLatestReport()
     this->spikePlot->replot();
 
     return true;
+}
+
+void DataProvider::setupReportWatcher()
+{
+    watcher = new QFileSystemWatcher(this);
+    // use a file as watch-path which is definitely be written after the files we are interested in
+    watcher->addPath("/home/sjentzsch/HBP/SpiNNaker/spinnaker_package_jun14/reports/latest/chip_sdram_usage_by_core.rpt");
+    connect(watcher, SIGNAL(directoryChanged(const QString&)), this, SLOT(reportChanged(const QString&)));
+    connect(watcher, SIGNAL(fileChanged(const QString&)), this, SLOT(reportChanged(const QString&)));
+
+    if(!this->parseLatestReport())
+        qDebug() << "Error: parse latest report was *not* successfully completed.";
+}
+
+void DataProvider::reportChanged(const QString& path)
+{
+    // files might not be ready yet, resp. do not exist yet (see Qt bug below)
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+    if(!this->parseLatestReport())
+        qDebug() << "Error: parse latest report was *not* successfully completed.";
+
+    // workaround for Qt bug: http://stackoverflow.com/questions/18300376/qt-qfilesystemwatcher-singal-filechanged-gets-emited-only-once
+    QFileInfo checkFile(path);
+    while(!checkFile.exists())
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    watcher->addPath(path);
 }
 
 void DataProvider::readData()

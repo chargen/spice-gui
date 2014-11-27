@@ -9,6 +9,7 @@
 
 #include <QObject>
 #include <QUdpSocket>
+#include <QFileSystemWatcher>
 
 class MainWindow;
 
@@ -55,6 +56,8 @@ public:
 
     bool parseLatestReport();
 
+    void setupReportWatcher();
+
     void setSpikePlot(QCustomPlot *spikePlot_);
 
 signals:
@@ -63,6 +66,7 @@ public slots:
 
 private slots:
     void readData();
+    void reportChanged(const QString& path);
     void displayError(QAbstractSocket::SocketError socketError);
 
 private:
@@ -80,6 +84,8 @@ private:
     std::vector< VertexInfo > vecVertices;
 
     QCustomPlot *spikePlot;
+
+    QFileSystemWatcher* watcher;
 };
 
 #endif // DATAPROVIDER_H

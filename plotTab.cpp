@@ -75,8 +75,7 @@ PlotTab::PlotTab(QWidget *parent) :
 
     DataProvider::getInstance()->setSpikePlot(ui->spikePlot);
 
-    // TODO: move somewhere else?
-    DataProvider::getInstance()->parseLatestReport();
+    DataProvider::getInstance()->setupReportWatcher();
 
     // setup a timer that repeatedly calls MainWindow::realtimeDataSlot:
     connect(&dataTimer, SIGNAL(timeout()), this, SLOT(realtimeDataSlot()));
