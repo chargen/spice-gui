@@ -110,7 +110,10 @@ bool DataProvider::parseLatestReport()
         reportFile1.close();
     }
     else
+    {
+        qDebug() << "ParseLatestReport: Could not open time_stamp file.";
         return false;
+    }
 
 
     // 2) placement_by_vertex.rpt
@@ -125,7 +128,10 @@ bool DataProvider::parseLatestReport()
         reportFile3.close();
     }
     else
+    {
+        qDebug() << "ParseLatestReport: Could not open placement_by_vertex file.";
         return false;
+    }
 
     // split by vertices
     QStringList strVertices = QString::fromStdString(strReport3).split(QString("**** Vertex:"), QString::SkipEmptyParts);
@@ -136,11 +142,19 @@ bool DataProvider::parseLatestReport()
         // read in vertex infos
         QRegExp regVertexInfo("^\\s*'(.*)'\\s*Model:\\s(.*\\S)\\s*Pop\\ssz:\\s(\\d+)\\s*Sub-vertices:\\s*(?:Slice\\s(\\d+):(\\d+)\\s\\((\\d+)\\satoms\\)\\son\\score\\s\\((\\d+),\\s(\\d+),\\s(\\d+)\\)\\s*)+$");
         if(regVertexInfo.indexIn(*strVertex) < 0)
+        {
+            qDebug() << "ParseLatestReport: No regexp match for the vertex found.";
             return false;
+        }
 
-        vecVertices.push_back(VertexInfo(vecVertices.size(), currGraphOffset, regVertexInfo.cap(1).toStdString(), regVertexInfo.cap(2).toStdString(), regVertexInfo.cap(3).toUInt()));
+        // TODO: remove this; hard-code max-neurons-to-be-plotted per vertex here!!
+        uint maxGraphsPerVertex = regVertexInfo.cap(3).toUInt();
+        if(regVertexInfo.cap(1).toStdString() == "grclayer")
+            maxGraphsPerVertex = 5;
 
-        currGraphOffset += vecVertices.back().popSize;
+        vecVertices.push_back(VertexInfo(vecVertices.size(), currGraphOffset, maxGraphsPerVertex, regVertexInfo.cap(1).toStdString(), regVertexInfo.cap(2).toStdString(), regVertexInfo.cap(3).toUInt()));
+
+        currGraphOffset += maxGraphsPerVertex;
 
         qDebug() << "Added Vertex" << regVertexInfo.cap(1) << "of model" << regVertexInfo.cap(2) << "with population size" << regVertexInfo.cap(3);
     }
@@ -159,7 +173,10 @@ bool DataProvider::parseLatestReport()
         reportFile.close();
     }
     else
+    {
+        qDebug() << "ParseLatestReport: Could not open placement_by_core file.";
         return false;
+    }
 
     // split by chips
     QStringList strChips = QString::fromStdString(strReport).split(QString("**** Chip:"), QString::SkipEmptyParts);
@@ -171,7 +188,10 @@ bool DataProvider::parseLatestReport()
         regChipCoords.indexIn(*strChip);
         QStringList strChipCoords = regChipCoords.capturedTexts();
         if(strChipCoords.size() != 3)
+        {
+            qDebug() << "ParseLatestReport: strChipCoords hat not the expected size of 3.";
             return false;
+        }
         size_t chip_x = static_cast< size_t >(strChipCoords.at(1).toUInt());
         size_t chip_y = static_cast< size_t >(strChipCoords.at(2).toUInt());
 
@@ -183,7 +203,10 @@ bool DataProvider::parseLatestReport()
             // read in core id and all the subvertex infos
             QRegExp regCoreId("^\\s*(\\d+):\\sVertex:\\s'(.*)',\\spop\\ssz:\\s(\\d+)\\s*Slice\\son\\sthis\\score:\\s(\\d+):(\\d+)\\s\\((\\d+)\\satoms\\)\\s*Model:\\s(.*\\S)\\s*$");
             if(regCoreId.indexIn(*strCore) < 0)
+            {
+                qDebug() << "ParseLatestReport: No regexp match for the core found.";
                 return false;
+            }
             size_t core_id = static_cast< size_t >(regCoreId.cap(1).toUInt());
 
             std::string sviName = regCoreId.cap(2).toStdString();
@@ -194,7 +217,10 @@ bool DataProvider::parseLatestReport()
             uint sviSliceLength = regCoreId.cap(6).toUInt();
 
             if(sviSliceEnd - sviSliceStart + 1 != sviSliceLength)
+            {
+                qDebug() << "ParseLatestReport: core pop slice end and start do not match the length.";
                 return false;
+            }
 
             qDebug() << "New entry for (chip_x, chip_y, core_id) = (" << chip_x << ", " << chip_y << ", " << core_id << "): SubvertexInfo(name, model, popSize, sliceStart, sliceEnd, sliceLength) = (" << QString::fromStdString(sviName) << ", " << QString::fromStdString(sviModel) << ", " << QString::number(sviPopSize) << ", " << QString::number(sviSliceStart) << ", " << QString::number(sviSliceEnd) << ", " << QString::number(sviSliceLength) << ")";
 
@@ -205,7 +231,10 @@ bool DataProvider::parseLatestReport()
                     vertex = &vecVertices.at(i);
             }
             if(vertex == NULL)
+            {
+                qDebug() << "ParseLatestReport: No matching vertex found.";
                 return false;
+            }
 
             mapPopByCoord[std::make_tuple(chip_x, chip_y, core_id)] = SubvertexInfo(vertex, sviSliceStart, sviSliceEnd, sviSliceLength);
         }
@@ -219,8 +248,9 @@ bool DataProvider::parseLatestReport()
         if(i == 1) color = Qt::red;
         else if(i == 2) color = Qt::blue;
         else if(i == 3) color = Qt::darkGreen;
+        // TODO: add more colors for the vertices/pops here
 
-        for(size_t u=0; u<vecVertices.at(i).popSize; u++)
+        for(size_t u=0; u<vecVertices.at(i).graphCount; u++)
         {
             this->spikePlot->addGraph();
             this->spikePlot->graph(this->spikePlot->graphCount()-1)->setPen(QPen(color));
@@ -235,7 +265,7 @@ bool DataProvider::parseLatestReport()
     for(size_t v=0; v<vecVertices.size(); v++)
     {
         tickVectorLabels.push_back(QString::fromStdString(vecVertices.at(v).name)+" "+QString::number(1));
-        for(uint p=1; p<vecVertices.at(v).popSize; p++)
+        for(uint p=1; p<vecVertices.at(v).graphCount; p++)
             tickVectorLabels.push_back(QString::number(p+1));
     }
     this->spikePlot->yAxis->setTickVector(tickVector);
@@ -284,7 +314,8 @@ void DataProvider::readData()
         quint16 senderPort;
         udpSocket->readDatagram(datagram.data(), datagram.size(), &senderAddress, &senderPort);    // TODO: might fail -> handle the case?
 
-        qDebug() << QDateTime::currentDateTime().toString("hh:mm:ss.zzz") << ": Received a package from " << senderAddress.toString() << " port " << QString::number(senderPort) << " of size " << QString::number(datagram.size()) << ": " << datagram.toHex();
+        // TODO: uncomment or log or so ... ?!
+        //qDebug() << QDateTime::currentDateTime().toString("hh:mm:ss.zzz") << ": Received a package from " << senderAddress.toString() << " port " << QString::number(senderPort) << " of size " << QString::number(datagram.size()) << ": " << datagram.toHex();
 
         QDataStream dataStream(datagram.mid(14));
         dataStream.setByteOrder(QDataStream::LittleEndian);
@@ -292,7 +323,7 @@ void DataProvider::readData()
         dataStream >> scpTime;
         dataStream >> scpNumSpikes;
         dataStream >> scpArg3;
-        qDebug() << "DATA EXTRACT: " << scpTime << " | " << scpNumSpikes << "|" << scpArg3;
+        //qDebug() << "DATA EXTRACT: " << scpTime << " | " << scpNumSpikes << "|" << scpArg3;
 
         for(quint32 i=0; i<scpNumSpikes; i++)
         {
@@ -308,13 +339,17 @@ void DataProvider::readData()
 
             SubvertexInfo* subvertex = &mapPopByCoord.at(std::make_tuple(dataChipX, dataChipY, dataCoreID));
 
-            qDebug() << "=> Spike: " << dataChipX << " | " << dataChipY << " | " << dataS << " | " << dataCoreID << " | " << dataNeuronID << " | " << QString::fromStdString(subvertex->vertex->model) << " | " << QString::fromStdString(subvertex->vertex->name);
+            //qDebug() << "=> Spike: " << dataChipX << " | " << dataChipY << " | " << dataS << " | " << dataCoreID << " | " << dataNeuronID << " | " << QString::fromStdString(subvertex->vertex->model) << " | " << QString::fromStdString(subvertex->vertex->name);
 
             if(this->spikePlot != NULL)
             {
-                double key = QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0;
-                uint graphID = subvertex->vertex->graphOffset + dataNeuronID;
-                this->spikePlot->graph(graphID)->addData(key, graphID);
+                // omit spikes which come from neurons we are not interested in for plotting
+                if(dataNeuronID < subvertex->vertex->graphCount)
+                {
+                    double key = QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0;
+                    uint graphID = subvertex->vertex->graphOffset + dataNeuronID;
+                    this->spikePlot->graph(graphID)->addData(key, graphID);
+                }
             }
         }
     }

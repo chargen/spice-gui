@@ -24,14 +24,26 @@ public:
 
     struct VertexInfo {
         VertexInfo()
-            : id(0), graphOffset(0), name(""), model(""), popSize(0) {}
-        VertexInfo(uint id_, uint graphOffset_, std::string name_, std::string model_, uint popSize_)
-            : id(id_), graphOffset(graphOffset_), name(name_), model(model_), popSize(popSize_) {}
+            : id(0), graphOffset(0), graphCount(0), name(""), model(""), popSize(0) {}
+        VertexInfo(uint id_, uint graphOffset_, uint graphCount_, std::string name_, std::string model_, uint popSize_)
+            : id(id_), graphOffset(graphOffset_), graphCount(graphCount_), name(name_), model(model_), popSize(popSize_) {}
 
+        /* ID of the vertex within the vector of vertices */
         uint id;
+
+        /* global offset where the graphs of this vertex begin within the graph-list */
         uint graphOffset;
+
+        /* number of graphs for this population <-> number of neurons which we are interested in for plotting */
+        uint graphCount;
+
+        /* label or name of this vertex */
         std::string name;
+
+        /* name of the model used when defining this population */
         std::string model;
+
+        /* number of neurons of this population */
         uint popSize;
     };
 

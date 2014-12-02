@@ -12,7 +12,12 @@ SOURCES += \
     mainwindow.cpp \
     serialTab.cpp \
     plotTab.cpp \
-    dataprovider.cpp
+    dataprovider.cpp \
+    can/CanInterface.cpp \
+    can/KvaserCanInterface.cpp \
+    can/muscleDriverCANInterface.cpp \
+    can/main2.cpp \
+    canTab.cpp
 
 HEADERS += \
     settingsdialog.h \
@@ -21,13 +26,21 @@ HEADERS += \
     mainwindow.h \
     serialTab.h \
     plotTab.h \
-    dataprovider.h
+    dataprovider.h \
+    can/CanInterface.h \
+    can/KvaserCanInterface.h \
+    can/muscleDriverCANInterface.h \
+    can/UserInterface.h \
+    canTab.h
 
 FORMS += \
     settingsdialog.ui \
     mainwindow.ui \
     serialtab.ui \
-    plottab.ui
+    plottab.ui \
+    cantab.ui
 
 RESOURCES += \
     icons.qrc
+
+LIBS += -lcanlib

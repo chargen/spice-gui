@@ -176,11 +176,11 @@ void PlotTab::realtimeDataSlot()
     static double lastFpsKey;
     static int frameCount;
     ++frameCount;
-    if (key-lastFpsKey > 2) // average fps over 2 seconds
+    if(key-lastFpsKey > 2) // average fps over 2 seconds
     {
         int dataCount = 0;
         for(int i=0; i<ui->spikePlot->graphCount(); i++)
-            dataCount += ui->spikePlot->graph(0)->data()->count();
+            dataCount += ui->spikePlot->graph(i)->data()->count();
 
         mainWindow->showMessageStatusBar(
             QString("%1 FPS, %2 Graphs, Total Data points: %3")

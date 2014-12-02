@@ -25,12 +25,12 @@
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
-        <string>&amp;1 Tab</string>
+        <string>&amp;1 Control Centre</string>
        </attribute>
       </widget>
       <widget class="QWidget" name="tab_serial">
        <attribute name="title">
-        <string>&amp;2 Tab</string>
+        <string>&amp;2 Serial Connection</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_2">
         <item row="0" column="0">
@@ -40,11 +40,21 @@
       </widget>
       <widget class="QWidget" name="tab_plot">
        <attribute name="title">
-        <string>&amp;3 Tab</string>
+        <string>&amp;3 Live Spike Data</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout">
         <item row="0" column="0">
          <widget class="PlotTab" name="plotTabWidget" native="true"/>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_can">
+       <attribute name="title">
+        <string>&amp;4 CAN Connection</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_4">
+        <item row="0" column="0">
+         <widget class="CanTab" name="widget" native="true"/>
         </item>
        </layout>
       </widget>
@@ -107,7 +117,7 @@
   </widget>
   <action name="actionConnect">
    <property name="icon">
-    <iconset resource="terminal.qrc">
+    <iconset resource="icons.qrc">
      <normaloff>:/images/connect.png</normaloff>:/images/connect.png</iconset>
    </property>
    <property name="text">
@@ -119,7 +129,7 @@
   </action>
   <action name="actionDisconnect">
    <property name="icon">
-    <iconset resource="terminal.qrc">
+    <iconset resource="icons.qrc">
      <normaloff>:/images/disconnect.png</normaloff>:/images/disconnect.png</iconset>
    </property>
    <property name="text">
@@ -131,7 +141,7 @@
   </action>
   <action name="actionQuit">
    <property name="icon">
-    <iconset resource="terminal.qrc">
+    <iconset resource="icons.qrc">
      <normaloff>:/images/application-exit.png</normaloff>:/images/application-exit.png</iconset>
    </property>
    <property name="text">
@@ -143,7 +153,7 @@
   </action>
   <action name="actionPreferences">
    <property name="icon">
-    <iconset resource="terminal.qrc">
+    <iconset resource="icons.qrc">
      <normaloff>:/images/settings.png</normaloff>:/images/settings.png</iconset>
    </property>
    <property name="text">
@@ -162,7 +172,7 @@
   </action>
   <action name="actionClear">
    <property name="icon">
-    <iconset resource="terminal.qrc">
+    <iconset resource="icons.qrc">
      <normaloff>:/images/clear.png</normaloff>:/images/clear.png</iconset>
    </property>
    <property name="text">
@@ -183,9 +193,15 @@
    <header>plotTab.h</header>
    <container>1</container>
   </customwidget>
+  <customwidget>
+   <class>CanTab</class>
+   <extends>QWidget</extends>
+   <header>canTab.h</header>
+   <container>1</container>
+  </customwidget>
  </customwidgets>
  <resources>
-  <include location="terminal.qrc"/>
+  <include location="icons.qrc"/>
  </resources>
  <connections/>
 </ui>
