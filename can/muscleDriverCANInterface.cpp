@@ -60,8 +60,11 @@ void MuscleDriverCANInterface::cyclicProcessor()
 	//this method also shows how to access the data for those who would like to code...
 	//comment out if not necessary
 //Fix offset of the joint to move the .
-	jointData[0].s.jointPosition = (jointData[0].s.jointPosition + 2048 ) % 4096;
-	//printRxData();
+
+    // should be obsolete
+    //jointData[0].s.jointPosition = (jointData[0].s.jointPosition + 2048 ) % 4096;
+
+    //printRxData();
 
 
     /*
@@ -155,10 +158,10 @@ void MuscleDriverCANInterface::cyclicProcessor()
 
 	//supply data to CAN interface
 
-	motorCommand[0].s.dutyCycle= m_reference; //*(jointData[0].s.jointPosition - 1400 );
+    //motorCommand[0].s.dutyCycle = rightDriveValue; //*(jointData[0].s.jointPosition - 1400 );
 
 
-//	motorCommand[1].s.dutyCycle= leftDriveValue;
+    //motorCommand[1].s.dutyCycle = leftDriveValue;
 
 
 
@@ -181,50 +184,7 @@ void MuscleDriverCANInterface::cyclicProcessor()
 
 	//flush
 	//std::cout.flush();
-
-
-
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 //CAN Receive Callback, invoked when CAN data on bus.
 

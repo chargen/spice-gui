@@ -10,6 +10,7 @@
 #include <QObject>
 #include <QUdpSocket>
 #include <QFileSystemWatcher>
+#include <QtSerialPort/QSerialPort>
 
 class MainWindow;
 
@@ -72,6 +73,10 @@ public:
 
     void setSpikePlot(QCustomPlot *spikePlot_);
 
+    qint64 getTimeLastParsedInMs() {return this->timeLastParsedInMs;}
+
+    QSerialPort* serial;
+
 signals:
 
 public slots:
@@ -80,6 +85,9 @@ private slots:
     void readData();
     void reportChanged(const QString& path);
     void displayError(QAbstractSocket::SocketError socketError);
+    void handleError(QSerialPort::SerialPortError error);
+    void openSerialPort();
+    void closeSerialPort();
 
 private:
     static DataProvider* dataProvider;
@@ -94,6 +102,7 @@ private:
     std::map< std::tuple< size_t, size_t, size_t >, SubvertexInfo > mapPopByCoord;
     std::string reportID;
     std::vector< VertexInfo > vecVertices;
+    qint64 timeLastParsedInMs;
 
     QCustomPlot *spikePlot;
 

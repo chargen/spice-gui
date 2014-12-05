@@ -15,18 +15,14 @@
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="1">
-    <widget class="QPushButton" name="pushButton_2">
+    <widget class="QPushButton" name="savePlotButton">
      <property name="text">
-      <string>SpiNNaker Explosion (loud)</string>
+      <string>Save Plot as .png</string>
      </property>
     </widget>
    </item>
-   <item row="0" column="0">
-    <widget class="QPushButton" name="reloadReportButton">
-     <property name="text">
-      <string>Reload Latest Report</string>
-     </property>
-    </widget>
+   <item row="3" column="0" colspan="3">
+    <widget class="QCustomPlot" name="spikePlot" native="true"/>
    </item>
    <item row="0" column="2">
     <spacer name="horizontalSpacer">
@@ -41,8 +37,57 @@
      </property>
     </spacer>
    </item>
-   <item row="1" column="0" colspan="3">
-    <widget class="QCustomPlot" name="spikePlot" native="true"/>
+   <item row="1" column="0">
+    <widget class="QSlider" name="leftMotorSlider">
+     <property name="minimumSize">
+      <size>
+       <width>200</width>
+       <height>0</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>200</width>
+       <height>16777215</height>
+      </size>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QPushButton" name="reloadReportButton">
+     <property name="text">
+      <string>Reload Latest Report</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QSlider" name="rightMotorSlider">
+     <property name="minimumSize">
+      <size>
+       <width>200</width>
+       <height>0</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>200</width>
+       <height>16777215</height>
+      </size>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QPushButton" name="setMotorsButton">
+     <property name="text">
+      <string>Set Motors</string>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>

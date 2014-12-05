@@ -38,7 +38,8 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
     ui->baudRateBox->setCurrentIndex(4);
     ui->baudRateBox->setCurrentText(QString::number(4000000));
     ui->flowControlBox->setCurrentIndex(1);
-    ui->localEchoCheckBox->setChecked(false);
+    ui->localEchoCheckBox->setChecked(true);
+    ui->localEchoCheckBox->setEnabled(false);
     ui->liveSpikePortEdit->setText(QString::number(17895));
     ui->spinnakerPackageEdit->setText("/home/sjentzsch/HBP/SpiNNaker/spinnaker_package_jun14");
     spinnakerPackageDir = new QDir(ui->spinnakerPackageEdit->text());

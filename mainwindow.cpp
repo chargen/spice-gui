@@ -26,8 +26,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->actionQuit->setEnabled(true);
     ui->actionPreferences->setEnabled(true);
 
-    connect(ui->actionConnect, SIGNAL(triggered()), ui->serialTabWidget, SLOT(openSerialPort()));
-    connect(ui->actionDisconnect, SIGNAL(triggered()), ui->serialTabWidget, SLOT(closeSerialPort()));
+    connect(ui->actionConnect, SIGNAL(triggered()), DataProvider::getInstance(), SLOT(openSerialPort()));
+    connect(ui->actionDisconnect, SIGNAL(triggered()), DataProvider::getInstance(), SLOT(closeSerialPort()));
     connect(ui->actionQuit, SIGNAL(triggered()), this, SLOT(close()));
     connect(ui->actionClear, SIGNAL(triggered()), ui->serialTabWidget, SLOT(clear()));
     connect(ui->actionPreferences, SIGNAL(triggered()), SettingsDialog::getInstance(), SLOT(show()));

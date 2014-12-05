@@ -5,8 +5,6 @@
 
 #include <QWidget>
 
-#include <QtSerialPort/QSerialPort>
-
 QT_USE_NAMESPACE
 
 QT_BEGIN_NAMESPACE
@@ -31,19 +29,14 @@ public:
     void setMainWindow(MainWindow* mainWindow_);
 
 private slots:
-    void openSerialPort();
-    void closeSerialPort();
     void writeData(const QByteArray &data);
     void readData();
     void clear();
-
-    void handleError(QSerialPort::SerialPortError error);
 
 private:
     Ui::SerialTab *ui;
     MainWindow *mainWindow;
     Console *console;
-    QSerialPort *serial;
 };
 
 #endif // SERIALTAB_H

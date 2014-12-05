@@ -26,7 +26,13 @@ DataProvider::DataProvider(QObject *parent) :
     this->mainWindow = NULL;
     this->spikePlot = NULL;
 
+    this->timeLastParsedInMs = 0;
+
     this->watcher = NULL;
+
+    serial = new QSerialPort(this);
+
+    connect(serial, SIGNAL(error(QSerialPort::SerialPortError)), this, SLOT(handleError(QSerialPort::SerialPortError)));
 
     connect(udpSocket, SIGNAL(readyRead()), this, SLOT(readData()));
     connect(udpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(displayError(QAbstractSocket::SocketError)));
@@ -104,34 +110,33 @@ bool DataProvider::parseLatestReport()
     // 1) time_stamp
     reportID.clear();
     std::ifstream reportFile1(currentSettings.spinPackPath.toStdString()+"/reports/latest/time_stamp");
-    if(reportFile1.is_open())
+    while(!reportFile1.is_open())
     {
-        std::getline(reportFile1, reportID);
-        reportFile1.close();
+        qDebug() << "ParseLatestReport: open time_stamp file...";
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        reportFile1.open(currentSettings.spinPackPath.toStdString()+"/reports/latest/time_stamp");
     }
-    else
-    {
-        qDebug() << "ParseLatestReport: Could not open time_stamp file.";
-        return false;
-    }
+
+    std::getline(reportFile1, reportID);
+    reportFile1.close();
 
 
     // 2) placement_by_vertex.rpt
     vecVertices.clear();
     std::ifstream reportFile3(currentSettings.spinPackPath.toStdString()+"/reports/latest/placement_by_vertex.rpt");
     std::string strReport3;
-    if(reportFile3.is_open())
+
+    while(!reportFile3.is_open())
     {
-        std::stringstream buffer;
-        buffer << reportFile3.rdbuf();
-        strReport3 = buffer.str();
-        reportFile3.close();
+        qDebug() << "ParseLatestReport: open placement_by_vertex file...";
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        reportFile3.open(currentSettings.spinPackPath.toStdString()+"/reports/latest/placement_by_vertex.rpt");
     }
-    else
-    {
-        qDebug() << "ParseLatestReport: Could not open placement_by_vertex file.";
-        return false;
-    }
+
+    std::stringstream buffer;
+    buffer << reportFile3.rdbuf();
+    strReport3 = buffer.str();
+    reportFile3.close();
 
     // split by vertices
     QStringList strVertices = QString::fromStdString(strReport3).split(QString("**** Vertex:"), QString::SkipEmptyParts);
@@ -148,15 +153,28 @@ bool DataProvider::parseLatestReport()
         }
 
         // TODO: remove this; hard-code max-neurons-to-be-plotted per vertex here!!
-        uint maxGraphsPerVertex = regVertexInfo.cap(3).toUInt();
-        if(regVertexInfo.cap(1).toStdString() == "grclayer")
-            maxGraphsPerVertex = 5;
+        QString popName = regVertexInfo.cap(1);
+        uint maxGraphsPerVertex = 0;
+        // TODO: optimize me
+        if(popName.endsWith("_PLOT"))
+        {
+            popName.chop(5);
+            if(regVertexInfo.cap(3).toUInt() > 32)
+                maxGraphsPerVertex = 32;
+            else
+                maxGraphsPerVertex = regVertexInfo.cap(3).toUInt();
+        }
 
-        vecVertices.push_back(VertexInfo(vecVertices.size(), currGraphOffset, maxGraphsPerVertex, regVertexInfo.cap(1).toStdString(), regVertexInfo.cap(2).toStdString(), regVertexInfo.cap(3).toUInt()));
+        /*if(regVertexInfo.cap(1).toStdString() != "Monitor")
+            maxGraphsPerVertex = 10;
+        if(regVertexInfo.cap(1).toStdString() == "mySourceI")
+            maxGraphsPerVertex = 5;*/
+
+        vecVertices.push_back(VertexInfo(vecVertices.size(), currGraphOffset, maxGraphsPerVertex, popName.toStdString(), regVertexInfo.cap(2).toStdString(), regVertexInfo.cap(3).toUInt()));
 
         currGraphOffset += maxGraphsPerVertex;
 
-        qDebug() << "Added Vertex" << regVertexInfo.cap(1) << "of model" << regVertexInfo.cap(2) << "with population size" << regVertexInfo.cap(3);
+        qDebug() << "Added Vertex" << popName << "of model" << regVertexInfo.cap(2) << "with population size" << regVertexInfo.cap(3);
     }
     qDebug() << "=> we got" << QString::number(vecVertices.size()) << "vertices.";
 
@@ -165,18 +183,18 @@ bool DataProvider::parseLatestReport()
     mapPopByCoord.clear();
     std::ifstream reportFile(currentSettings.spinPackPath.toStdString()+"/reports/latest/placement_by_core.rpt");
     std::string strReport;
-    if(reportFile.is_open())
+
+    while(!reportFile.is_open())
     {
-        std::stringstream buffer;
-        buffer << reportFile.rdbuf();
-        strReport = buffer.str();
-        reportFile.close();
+        qDebug() << "ParseLatestReport: open placement_by_core file...";
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        reportFile.open(currentSettings.spinPackPath.toStdString()+"/reports/latest/placement_by_core.rpt");
     }
-    else
-    {
-        qDebug() << "ParseLatestReport: Could not open placement_by_core file.";
-        return false;
-    }
+
+    std::stringstream buffer2;
+    buffer2 << reportFile.rdbuf();
+    strReport = buffer2.str();
+    reportFile.close();
 
     // split by chips
     QStringList strChips = QString::fromStdString(strReport).split(QString("**** Chip:"), QString::SkipEmptyParts);
@@ -209,7 +227,11 @@ bool DataProvider::parseLatestReport()
             }
             size_t core_id = static_cast< size_t >(regCoreId.cap(1).toUInt());
 
-            std::string sviName = regCoreId.cap(2).toStdString();
+            // TODO: optimize me
+            QString sviNameTemp = regCoreId.cap(2);
+            if(sviNameTemp.endsWith("_PLOT"))
+                sviNameTemp.chop(5);
+            std::string sviName = sviNameTemp.toStdString();
             std::string sviModel = regCoreId.cap(7).toStdString();
             uint sviPopSize = regCoreId.cap(3).toUInt();
             uint sviSliceStart = regCoreId.cap(4).toUInt();
@@ -240,14 +262,17 @@ bool DataProvider::parseLatestReport()
         }
     }
 
+    // set timeLastParsedInMs
+    this->timeLastParsedInMs = QDateTime::currentDateTime().toMSecsSinceEpoch();
+
     // prepare the graphs
     this->spikePlot->clearGraphs();
     for(size_t i=0; i<vecVertices.size(); i++)
     {
         Qt::GlobalColor color = Qt::black;
-        if(i == 1) color = Qt::red;
-        else if(i == 2) color = Qt::blue;
-        else if(i == 3) color = Qt::darkGreen;
+        if((i+0)%3 == 0) color = Qt::red;
+        else if((i+1)%3 == 0) color = Qt::blue;
+        else if((i+2)%3 == 0) color = Qt::darkGreen;
         // TODO: add more colors for the vertices/pops here
 
         for(size_t u=0; u<vecVertices.at(i).graphCount; u++)
@@ -264,11 +289,23 @@ bool DataProvider::parseLatestReport()
         tickVector.push_back(i);
     for(size_t v=0; v<vecVertices.size(); v++)
     {
-        tickVectorLabels.push_back(QString::fromStdString(vecVertices.at(v).name)+" "+QString::number(1));
-        for(uint p=1; p<vecVertices.at(v).graphCount; p++)
-            tickVectorLabels.push_back(QString::number(p+1));
+        if(true)
+        {
+            if(vecVertices.at(v).graphCount > 0)
+                tickVectorLabels.push_back(QString::fromStdString(vecVertices.at(v).name));
+            for(uint p=1; p<vecVertices.at(v).graphCount; p++)
+                tickVectorLabels.push_back("");
+        }
+        else
+        {
+            if(vecVertices.at(v).graphCount > 0)
+                tickVectorLabels.push_back(QString::fromStdString(vecVertices.at(v).name)+" "+QString::number(1));
+            for(uint p=1; p<vecVertices.at(v).graphCount; p++)
+                tickVectorLabels.push_back(QString::number(p+1));
+        }
     }
     this->spikePlot->yAxis->setTickVector(tickVector);
+    this->spikePlot->yAxis2->setTickVector(tickVector);
     this->spikePlot->yAxis->setTickVectorLabels(tickVectorLabels);
     this->spikePlot->yAxis->setRange(0, this->spikePlot->graphCount());
     this->spikePlot->replot();
@@ -346,7 +383,9 @@ void DataProvider::readData()
                 // omit spikes which come from neurons we are not interested in for plotting
                 if(dataNeuronID < subvertex->vertex->graphCount)
                 {
-                    double key = QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0;
+                    // TODO: read in "Machine time step" from report file machine_structure.rpt and use this as scale factor
+
+                    double key = scpTime/10000.0;//QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - this->getTimeLastParsedInMs()/1000.0;
                     uint graphID = subvertex->vertex->graphOffset + dataNeuronID;
                     this->spikePlot->graph(graphID)->addData(key, graphID);
                 }
@@ -374,5 +413,49 @@ void DataProvider::displayError(QAbstractSocket::SocketError socketError)
         break;
     default:
         mainWindow->showMessageStatusBar(QString("The following error occurred: %1.").arg(udpSocket->errorString()));
+    }
+}
+
+void DataProvider::openSerialPort()
+{
+    SettingsDialog::Settings p = SettingsDialog::getInstance()->settings();
+
+    serial->setPortName(p.name);
+    serial->setBaudRate(p.baudRate);
+    serial->setDataBits(p.dataBits);
+    serial->setParity(p.parity);
+    serial->setStopBits(p.stopBits);
+    serial->setFlowControl(p.flowControl);
+    if (serial->open(QIODevice::ReadWrite)) {
+            //console->setEnabled(true);
+            //console->setLocalEchoEnabled(p.localEchoEnabled);
+            mainWindow->setEnabledConnect(false);
+            mainWindow->setEnabledDisconnect(true);
+            mainWindow->showMessageStatusBar(tr("Connected to %1 : %2, %3, %4, %5, %6")
+                                       .arg(p.name).arg(p.stringBaudRate).arg(p.stringDataBits)
+                                       .arg(p.stringParity).arg(p.stringStopBits).arg(p.stringFlowControl));
+    } else {
+        //QMessageBox::critical(this, tr("Error"), serial->errorString());
+
+        mainWindow->showMessageStatusBar(tr("Open error"));
+    }
+}
+
+void DataProvider::closeSerialPort()
+{
+    serial->close();
+    //console->setEnabled(false);
+    mainWindow->setEnabledConnect(true);
+    mainWindow->setEnabledDisconnect(false);
+    mainWindow->showMessageStatusBar(tr("Disconnected"));
+}
+
+void DataProvider::handleError(QSerialPort::SerialPortError error)
+{
+    if(error == QSerialPort::ResourceError)
+    {
+        mainWindow->showMessageStatusBar(QString("The following error occurred: %1.").arg(serial->errorString()));
+        //QMessageBox::critical(this, tr("Critical Error"), serial->errorString());
+        closeSerialPort();
     }
 }

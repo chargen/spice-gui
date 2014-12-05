@@ -14,7 +14,7 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
+   <item row="0" column="0" colspan="3">
     <widget class="Console" name="plainTextEdit"/>
    </item>
   </layout>

@@ -3,13 +3,23 @@
 #include "mainwindow.h"
 #include "dataprovider.h"
 
+#include <chrono>
+#include <thread>
+
 PlotTab::PlotTab(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::PlotTab)
 {
     ui->setupUi(this);
 
+    ui->leftMotorSlider->setMinimum(0);
+    ui->leftMotorSlider->setMaximum(1023);
+    ui->rightMotorSlider->setMinimum(0);
+    ui->rightMotorSlider->setMaximum(1023);
+
     connect(ui->reloadReportButton, SIGNAL(clicked()), this, SLOT(reloadReport()));
+    connect(ui->savePlotButton, SIGNAL(clicked()), this, SLOT(savePlot()));
+    connect(ui->setMotorsButton, SIGNAL(clicked()), this, SLOT(setMotors()));
 
     /*QVector<double> x(101), y(101); // initialize with entries 0..100
     for (int i=0; i<101; ++i)
@@ -58,6 +68,8 @@ PlotTab::PlotTab(QWidget *parent) :
     ui->spikePlot->yAxis->setAutoTickLabels(false);
     ui->spikePlot->yAxis->setTickVector(QVector<double>() << 5 << 55);
     ui->spikePlot->yAxis->setTickVectorLabels(QVector<QString>() << "sdg so\nhigh" << "Very\nhigh");
+    ui->spikePlot->yAxis2->setAutoTicks(false);
+    ui->spikePlot->yAxis2->setTickVector(QVector<double>() << 5 << 55);
     ui->spikePlot->yAxis->setRange(0, 60);
 
     //ui->spikePlot->yAxis->setAutoTickStep(false);
@@ -124,10 +136,11 @@ void PlotTab::setMainWindow(MainWindow* mainWindow_)
 
 void PlotTab::realtimeDataSlot()
 {
-    // calculate two new data points:
-    double key = QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0;
+    double key = QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - DataProvider::getInstance()->getTimeLastParsedInMs()/1000.0 - 2.0;
     static double lastPointKey = 0;
-    if(key-lastPointKey > 0.01) // at most add point every 10 ms
+
+    // remove old data points every x s
+    if(key-lastPointKey > 0.1)
     {
         /*double value0 = 0;//qSin(key); //sin(key*1.6+cos(key*1.7)*2)*10 + sin(key*1.2+0.56)*20 + 26;
         double value1 = 1;//qCos(key); //sin(key*1.3+cos(key*1.2)*1.2)*7 + sin(key*0.9+0.26)*24 + 26;
@@ -173,7 +186,7 @@ void PlotTab::realtimeDataSlot()
     ui->spikePlot->replot();
 
     // calculate frames per second:
-    static double lastFpsKey;
+    static double lastFpsKey = 0;
     static int frameCount;
     ++frameCount;
     if(key-lastFpsKey > 2) // average fps over 2 seconds
@@ -197,4 +210,47 @@ void PlotTab::reloadReport()
 {
     qDebug() << "Reload latest report ...";
     DataProvider::getInstance()->parseLatestReport();
+}
+
+void PlotTab::savePlot()
+{
+    // NOT working correctly currently -> qcustomplot 1.3 will make it work! wait for it!
+    //ui->spikePlot->savePdf("testPlotPdf2.pdf", false, 600, 1900);
+
+    //ui->spikePlot->setAntialiasedElements(QCP::aeAll);
+    ui->spikePlot->savePng("plot.png", 0, 0, 2.0, 100);
+}
+
+void PlotTab::setMotors()
+{
+    if(!DataProvider::getInstance()->serial->isOpen())
+        return;
+
+    QString valueHexString = QString::number(ui->leftMotorSlider->value(), 16);
+    QString string = "@FEFFFE30.00000";
+    for(unsigned int i=0; i<3-valueHexString.length(); i++)
+        string.append("0");
+    string += valueHexString;
+    string.append("\n");
+    QByteArray data(string.toStdString().c_str());
+
+    qDebug() << "setLeftMotor: " << string << " (" << string.length() << ")";
+
+    DataProvider::getInstance()->serial->write(data);
+
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+
+    valueHexString = QString::number(ui->rightMotorSlider->value(), 16);
+    string = "@FEFFFE31.00000";
+    for(unsigned int i=0; i<3-valueHexString.length(); i++)
+        string.append("0");
+    string += valueHexString;
+    string.append("\n");
+    QByteArray data2(string.toStdString().c_str());
+
+    qDebug() << "setRightMotor: " << string << " (" << string.length() << ")";
+
+    DataProvider::getInstance()->serial->write(data2);
 }

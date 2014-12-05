@@ -29,6 +29,8 @@ public:
 private slots:
   void realtimeDataSlot();
   void reloadReport();
+  void savePlot();
+  void setMotors();
 
 private:
     Ui::PlotTab *ui;
