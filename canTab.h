@@ -28,7 +28,13 @@ public:
 
 private slots:
   void realtimeDataSlot();
-  void reloadReport();
+
+  void startCAN();
+  void stopCAN();
+  void setMotor();
+  void stopMotors();
+  void resetMotor1();
+  void resetMotor2();
 
 private:
     Ui::CanTab *ui;

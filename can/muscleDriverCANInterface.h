@@ -87,6 +87,7 @@ class MuscleDriverCANInterface : public QObject
 
  public:
      MuscleDriverCANInterface(int cycleTimeInMilliSeconds);
+     ~MuscleDriverCANInterface();
 
 
      int mode() const { return m_mode; }
@@ -96,7 +97,8 @@ class MuscleDriverCANInterface : public QObject
      void start();
      void stop();
      void detachCAN();
-     void getReference(float ref);
+     void setReference1(float ref);
+     void setReference2(float ref);
      void enableLogging (bool enabled);
 
  private slots:
@@ -109,7 +111,8 @@ class MuscleDriverCANInterface : public QObject
      int sendMotorCommands();
 	 CANInstantiation myCan;
 	 CHANNEL_HANDLE busHandle0;
-	 float m_reference;
+     float m_reference1;
+     float m_reference2;
 	  int motorTXID[MAX_DRIVERS_AND_JOINTS];
 	  int motorRXID[MAX_DRIVERS_AND_JOINTS];
 	  int jointRXID[MAX_DRIVERS_AND_JOINTS];

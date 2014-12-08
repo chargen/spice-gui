@@ -13,7 +13,7 @@
 
 #include <QSettings>
 #include <QDir>
-#include <QTextStream>
+#include<QTextStream>
 
 //pointer to current instantiation of CAN interface
 MuscleDriverCANInterface * currentCanInterface;
@@ -61,10 +61,10 @@ void MuscleDriverCANInterface::cyclicProcessor()
 	//comment out if not necessary
 //Fix offset of the joint to move the .
 
-    // should be obsolete
-    //jointData[0].s.jointPosition = (jointData[0].s.jointPosition + 2048 ) % 4096;
+    // should be obsolete according to Christoph !!
+	jointData[0].s.jointPosition = (jointData[0].s.jointPosition + 2048 ) % 4096;
 
-    //printRxData();
+	//printRxData();
 
 
     /*
@@ -112,30 +112,30 @@ void MuscleDriverCANInterface::cyclicProcessor()
 
 
 
-    //float error;
-    //float kp=3;
-    //float baseDrive = 0; //base drive can be added to create pre-tension in drives
-    //float pControl;
-    //float centredJointPosition;
-    //float reference;
-    //float leftDriveValue;
-    //float rightDriveValue;
-    //float driveLimit=800.0;
+	float error;
+	float kp=3;
+	float baseDrive = 0; //base drive can be added to create pre-tension in drives
+	float pControl;
+	float centredJointPosition;
+	float reference;
+	float leftDriveValue;
+	float rightDriveValue;
+	float driveLimit=800.0;
 
 	//here, we use the joint[0]  and set the centre position to zero
 	//centredJointPosition=jointData[0].s.jointPosition - jointMidPoint[0];
 
 	//error= (  m_reference - centredJointPosition );
 
-    //pControl=kp *  error;
+	pControl=kp *  error;
 
 	//we mount motor driver  motor board [1] on the side of decreasing (left) joint position,
 	// board [0] on the increasing side.
 
 	//consequently we drive
   	//insert limits here if desired
-    //rightDriveValue =  + pControl + baseDrive;
-    //leftDriveValue  =  - pControl + baseDrive;
+	rightDriveValue =  + pControl + baseDrive;
+	leftDriveValue  =  - pControl + baseDrive;
 
 
 	//limit drive signals if desired here
@@ -158,11 +158,13 @@ void MuscleDriverCANInterface::cyclicProcessor()
 
 	//supply data to CAN interface
 
-    //motorCommand[0].s.dutyCycle = rightDriveValue; //*(jointData[0].s.jointPosition - 1400 );
+    motorCommand[0].s.dutyCycle = m_reference1;
+
+    motorCommand[1].s.dutyCycle = m_reference2; //*(jointData[0].s.jointPosition - 1400 );
 
 
-    //motorCommand[1].s.dutyCycle = leftDriveValue;
 
+//	motorCommand[1].s.dutyCycle= leftDriveValue;
 
 
 
@@ -170,7 +172,6 @@ void MuscleDriverCANInterface::cyclicProcessor()
 	/*
 	 * END OF CYCLIC CONTROL LOOP
 	 */
-
 
 
 
@@ -185,6 +186,7 @@ void MuscleDriverCANInterface::cyclicProcessor()
 	//flush
 	//std::cout.flush();
 }
+
 
 //CAN Receive Callback, invoked when CAN data on bus.
 
@@ -204,12 +206,12 @@ void CANInstantiation::rxCallback(canNotifyData * rxNotifyData)
 
 void MuscleDriverCANInterface::handleRxData(canNotifyData * rxNotifyData)
 {
-    //int handle;
+	int handle;
 	    long id;
 	    char data[8];
 	    unsigned int dlc, flags;
 	    unsigned long timestamp;
-        //STATUS_CODE stat;
+	    STATUS_CODE stat;
 
 
 	 while (canERR_NOMSG != canRead(busHandle0, &id, data, &dlc, &flags, &timestamp))
@@ -245,7 +247,8 @@ MuscleDriverCANInterface::MuscleDriverCANInterface(int cycleTimeInMilliSeconds)
 		accutime=0;
 		motorDriveOn=0;
 		loggingEnabled=false;
-		m_reference=0.0 ; //default reference signal is 0
+        m_reference1=0.0;
+        m_reference2=0.0;
 
 		//read init file
 		readInit();
@@ -273,7 +276,7 @@ MuscleDriverCANInterface::MuscleDriverCANInterface(int cycleTimeInMilliSeconds)
 
 		 */
 
-		 timerThread =new QThread(this);
+         timerThread = new QThread(this);
 		 //userInterfaceThread = new QThread(this);
 
 		 cout<<"timer: "<< timerThread->currentThread()<<endl;
@@ -331,11 +334,16 @@ MuscleDriverCANInterface::MuscleDriverCANInterface(int cycleTimeInMilliSeconds)
 
 }
 
+MuscleDriverCANInterface::~MuscleDriverCANInterface()
+{
+    timerThread->terminate();
+}
+
 int MuscleDriverCANInterface::initCAN()
 {
 
 		 string myString;
-         //CAN_MESSAGE myCanMessage, canSentMessage;
+		 CAN_MESSAGE myCanMessage, canSentMessage;
 		 STATUS_CODE myCanStatus;
 		 busHandle0=myCan.openCanChannel(0);
 
@@ -401,8 +409,6 @@ int MuscleDriverCANInterface::sendMotorCommands()
 		  			  	//	myCan.printCanMessage(canSentMessage);
 		  myCan.sendCanMessage(busHandle0,canSentMessage);
       }
-
-      return 0;
 }
 
 int MuscleDriverCANInterface::readInit()
@@ -508,7 +514,6 @@ int MuscleDriverCANInterface::readInit()
 
 		 }
 
-        return 0;
 }
 
 /*
@@ -583,7 +588,8 @@ void MuscleDriverCANInterface::stop()
 {
 	cout<<"MOTOR STOP REQUESTED!"<<endl;
 	motorDriveOn=0;
-	m_reference=0.0;
+    m_reference1=0.0;
+    m_reference2=0.0;
 }
 
 void MuscleDriverCANInterface::detachCAN()
@@ -592,16 +598,18 @@ void MuscleDriverCANInterface::detachCAN()
 	cout<<"Restart Application to connect again."<<endl;
 	motorDriveOn=0;
 	outputFile.close();
-
 	//myCan.closeCanChannel(busHandle0);
 	timerThread->exit();
-
 }
 
-void MuscleDriverCANInterface::getReference(float ref)
+void MuscleDriverCANInterface::setReference1(float ref)
 {
-	cout<<"REFERENCE RECEIVED: "<< ref<<endl;
-	m_reference=ref;
+    m_reference1=ref;
+}
+
+void MuscleDriverCANInterface::setReference2(float ref)
+{
+    m_reference2=ref;
 }
 
 void MuscleDriverCANInterface::enableLogging (bool enabled)
@@ -616,5 +624,3 @@ void MuscleDriverCANInterface::enableLogging (bool enabled)
 	}
 	loggingEnabled=enabled;
 }
-
-

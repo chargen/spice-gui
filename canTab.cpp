@@ -3,13 +3,21 @@
 #include "mainwindow.h"
 #include "dataprovider.h"
 
+#include <chrono>
+#include <thread>
+
 CanTab::CanTab(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::CanTab)
 {
     ui->setupUi(this);
 
-    connect(ui->blaButton, SIGNAL(clicked()), this, SLOT(reloadReport()));
+    connect(ui->startCANButton, SIGNAL(clicked()), this, SLOT(startCAN()));
+    connect(ui->stopCANButton, SIGNAL(clicked()), this, SLOT(stopCAN()));
+    connect(ui->setMotorButton, SIGNAL(clicked()), this, SLOT(setMotor()));
+    connect(ui->reset1Button, SIGNAL(clicked()), this, SLOT(resetMotor1()));
+    connect(ui->reset2Button, SIGNAL(clicked()), this, SLOT(resetMotor2()));
+    connect(ui->stopMotorButton, SIGNAL(clicked()), this, SLOT(stopMotors()));
 
     /*QVector<double> x(101), y(101); // initialize with entries 0..100
     for (int i=0; i<101; ++i)
@@ -193,8 +201,37 @@ void CanTab::realtimeDataSlot()
     }
 }
 
-void CanTab::reloadReport()
+void CanTab::startCAN()
 {
-    qDebug() << "Reload latest report ...";
-    DataProvider::getInstance()->parseLatestReport();
+    DataProvider::getInstance()->startCan();
+}
+
+void CanTab::stopCAN()
+{
+    DataProvider::getInstance()->stopCan();
+}
+
+void CanTab::setMotor()
+{    
+    DataProvider::getInstance()->canInterface->setReference1(ui->motor1Slider->value());
+    DataProvider::getInstance()->canInterface->setReference2(ui->motor2Slider->value());
+
+    DataProvider::getInstance()->canInterface->start();
+    //std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    //DataProvider::getInstance()->canInterface->stop();
+}
+
+void CanTab::stopMotors()
+{
+    DataProvider::getInstance()->canInterface->stop();
+}
+
+void CanTab::resetMotor1()
+{
+    ui->motor1Slider->setValue(0);
+}
+
+void CanTab::resetMotor2()
+{
+    ui->motor2Slider->setValue(0);
 }

@@ -228,7 +228,7 @@ void PlotTab::setMotors()
 
     QString valueHexString = QString::number(ui->leftMotorSlider->value(), 16);
     QString string = "@FEFFFE30.00000";
-    for(unsigned int i=0; i<3-valueHexString.length(); i++)
+    for(int i=0; i<3-valueHexString.length(); i++)
         string.append("0");
     string += valueHexString;
     string.append("\n");
@@ -244,7 +244,7 @@ void PlotTab::setMotors()
 
     valueHexString = QString::number(ui->rightMotorSlider->value(), 16);
     string = "@FEFFFE31.00000";
-    for(unsigned int i=0; i<3-valueHexString.length(); i++)
+    for(int i=0; i<3-valueHexString.length(); i++)
         string.append("0");
     string += valueHexString;
     string.append("\n");

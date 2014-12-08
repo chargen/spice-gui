@@ -32,6 +32,8 @@ DataProvider::DataProvider(QObject *parent) :
 
     serial = new QSerialPort(this);
 
+    this->canInterface = NULL;
+
     connect(serial, SIGNAL(error(QSerialPort::SerialPortError)), this, SLOT(handleError(QSerialPort::SerialPortError)));
 
     connect(udpSocket, SIGNAL(readyRead()), this, SLOT(readData()));
@@ -457,5 +459,34 @@ void DataProvider::handleError(QSerialPort::SerialPortError error)
         mainWindow->showMessageStatusBar(QString("The following error occurred: %1.").arg(serial->errorString()));
         //QMessageBox::critical(this, tr("Critical Error"), serial->errorString());
         closeSerialPort();
+    }
+}
+
+void DataProvider::startCan()
+{
+    if(canInterface == NULL)
+    {
+        qDebug() << "Start CAN ...";
+
+        // start a CAN interface with a 10ms cycle time
+        canInterface = new MuscleDriverCANInterface(10);
+        /*QThread* canThread = new QThread;
+        canInterface->moveToThread(canThread);
+        canThread->start();*/
+    }
+}
+
+void DataProvider::stopCan()
+{
+    if(canInterface != NULL)
+    {
+        qDebug() << "Stop CAN ...";
+
+        canInterface->stop();
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        canInterface->detachCAN();
+        // TODO fixme, crashes always :)
+        delete canInterface;
+        canInterface = NULL;
     }
 }

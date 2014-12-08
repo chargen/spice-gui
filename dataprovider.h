@@ -12,6 +12,8 @@
 #include <QFileSystemWatcher>
 #include <QtSerialPort/QSerialPort>
 
+#include "can/muscleDriverCANInterface.h"
+
 class MainWindow;
 
 class QCustomPlot;
@@ -76,6 +78,10 @@ public:
     qint64 getTimeLastParsedInMs() {return this->timeLastParsedInMs;}
 
     QSerialPort* serial;
+
+    void startCan();
+    void stopCan();
+    MuscleDriverCANInterface* canInterface;
 
 signals:
 
