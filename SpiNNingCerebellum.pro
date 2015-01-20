@@ -1,4 +1,4 @@
-QT += core gui widgets printsupport network serialport
+QT += core gui widgets printsupport network serialport sql
 
 CONFIG += c++11
 TARGET = SpiNNingCerebellum
@@ -16,8 +16,9 @@ SOURCES += \
     can/CanInterface.cpp \
     can/KvaserCanInterface.cpp \
     can/muscleDriverCANInterface.cpp \
-    can/main2.cpp \
-    canTab.cpp
+    canTab.cpp \
+    can/main-old.cpp \
+    dbconnection.cpp
 
 HEADERS += \
     settingsdialog.h \
@@ -30,8 +31,8 @@ HEADERS += \
     can/CanInterface.h \
     can/KvaserCanInterface.h \
     can/muscleDriverCANInterface.h \
-    can/UserInterface.h \
-    canTab.h
+    canTab.h \
+    dbconnection.h
 
 FORMS += \
     settingsdialog.ui \

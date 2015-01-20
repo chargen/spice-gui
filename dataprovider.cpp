@@ -34,6 +34,11 @@ DataProvider::DataProvider(QObject *parent) :
 
     this->canInterface = NULL;
 
+    this->dbConnection = new DBConnection(this);
+    // test code starts!!
+
+    // test code ends!!
+
     connect(serial, SIGNAL(error(QSerialPort::SerialPortError)), this, SLOT(handleError(QSerialPort::SerialPortError)));
 
     connect(udpSocket, SIGNAL(readyRead()), this, SLOT(readData()));
@@ -42,9 +47,10 @@ DataProvider::DataProvider(QObject *parent) :
 
 DataProvider::~DataProvider()
 {
-    delete host;
-    delete udpSocket;
-    delete watcher;
+    delete this->host;
+    delete this->udpSocket;
+    delete this->watcher;
+    delete this->dbConnection;
 }
 
 DataProvider* DataProvider::getInstance()
@@ -108,7 +114,7 @@ bool DataProvider::parseLatestReport()
     //  3) placement_by_core.rpt
 
     SettingsDialog::Settings currentSettings = SettingsDialog::getInstance()->settings();
-
+/*
     // 1) time_stamp
     reportID.clear();
     std::ifstream reportFile1(currentSettings.spinPackPath.toStdString()+"/reports/latest/time_stamp");
@@ -143,7 +149,8 @@ bool DataProvider::parseLatestReport()
     // split by vertices
     QStringList strVertices = QString::fromStdString(strReport3).split(QString("**** Vertex:"), QString::SkipEmptyParts);
     strVertices.removeFirst();
-    uint currGraphOffset = 0;
+    uint currGraphOffset = 1;
+    uint numPopulationsToPlot = 0;
     for(QStringList::Iterator strVertex = strVertices.begin(); strVertex != strVertices.end(); ++strVertex)
     {
         // read in vertex infos
@@ -167,14 +174,19 @@ bool DataProvider::parseLatestReport()
                 maxGraphsPerVertex = regVertexInfo.cap(3).toUInt();
         }
 
-        /*if(regVertexInfo.cap(1).toStdString() != "Monitor")
-            maxGraphsPerVertex = 10;
-        if(regVertexInfo.cap(1).toStdString() == "mySourceI")
-            maxGraphsPerVertex = 5;*/
+        //if(regVertexInfo.cap(1).toStdString() != "Monitor")
+        //    maxGraphsPerVertex = 10;
+        //if(regVertexInfo.cap(1).toStdString() == "mySourceI")
+        //    maxGraphsPerVertex = 5;
 
         vecVertices.push_back(VertexInfo(vecVertices.size(), currGraphOffset, maxGraphsPerVertex, popName.toStdString(), regVertexInfo.cap(2).toStdString(), regVertexInfo.cap(3).toUInt()));
 
         currGraphOffset += maxGraphsPerVertex;
+        if(maxGraphsPerVertex > 0)
+        {
+            numPopulationsToPlot++;
+            currGraphOffset += 1;
+        }
 
         qDebug() << "Added Vertex" << popName << "of model" << regVertexInfo.cap(2) << "with population size" << regVertexInfo.cap(3);
     }
@@ -263,6 +275,9 @@ bool DataProvider::parseLatestReport()
             mapPopByCoord[std::make_tuple(chip_x, chip_y, core_id)] = SubvertexInfo(vertex, sviSliceStart, sviSliceEnd, sviSliceLength);
         }
     }
+*/
+    // TODO: FIXME
+    return false;
 
     // set timeLastParsedInMs
     this->timeLastParsedInMs = QDateTime::currentDateTime().toMSecsSinceEpoch();
@@ -277,7 +292,10 @@ bool DataProvider::parseLatestReport()
         else if((i+2)%3 == 0) color = Qt::darkGreen;
         // TODO: add more colors for the vertices/pops here
 
-        for(size_t u=0; u<vecVertices.at(i).graphCount; u++)
+        size_t graphCountWithDummy = vecVertices.at(i).graphCount;
+        if(graphCountWithDummy > 0)
+            graphCountWithDummy++;
+        for(size_t u=0; u<graphCountWithDummy; u++)
         {
             this->spikePlot->addGraph();
             this->spikePlot->graph(this->spikePlot->graphCount()-1)->setPen(QPen(color));
@@ -285,31 +303,60 @@ bool DataProvider::parseLatestReport()
             this->spikePlot->graph(this->spikePlot->graphCount()-1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 5));
         }
     }
+
     QVector<double> tickVector;
     QVector<QString> tickVectorLabels;
     for(int i=0; i<this->spikePlot->graphCount(); i++)
+    {
         tickVector.push_back(i);
+        tickVectorLabels.push_back("");
+    }
     for(size_t v=0; v<vecVertices.size(); v++)
     {
-        if(true)
+        tickVectorLabels[vecVertices.at(v).graphOffset] = QString::fromStdString(vecVertices.at(v).name);
+
+        /*if(true)
         {
+            tickVectorLabels.push_back("");
             if(vecVertices.at(v).graphCount > 0)
                 tickVectorLabels.push_back(QString::fromStdString(vecVertices.at(v).name));
             for(uint p=1; p<vecVertices.at(v).graphCount; p++)
                 tickVectorLabels.push_back("");
+
         }
         else
         {
+            tickVectorLabels.push_back("");
             if(vecVertices.at(v).graphCount > 0)
                 tickVectorLabels.push_back(QString::fromStdString(vecVertices.at(v).name)+" "+QString::number(1));
             for(uint p=1; p<vecVertices.at(v).graphCount; p++)
                 tickVectorLabels.push_back(QString::number(p+1));
-        }
+        }*/
     }
     this->spikePlot->yAxis->setTickVector(tickVector);
     this->spikePlot->yAxis2->setTickVector(tickVector);
     this->spikePlot->yAxis->setTickVectorLabels(tickVectorLabels);
     this->spikePlot->yAxis->setRange(0, this->spikePlot->graphCount());
+
+    // add lines for population separation
+    for(size_t v=0; v<vecVertices.size(); v++)
+    {
+        std::cout << "vertex " << v << ": " << vecVertices.at(v).graphOffset << " | " << vecVertices.at(v).graphCount << ::std::endl;
+
+        if(vecVertices.at(v).graphOffset > 1)
+        {
+            QCPItemStraightLine* line = new QCPItemStraightLine(this->spikePlot);
+            line->setAntialiased(false);
+            line->setPen(QPen(Qt::black, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+            this->spikePlot->addItem(line);
+            line->point1->setCoords(0, vecVertices.at(v).graphOffset-1);
+            line->point2->setCoords(1, vecVertices.at(v).graphOffset-1);
+        }
+    }
+    //arrow->start->setParentAnchor(textLabel->bottom);
+    //line->set->setCoords(4, 1.6); // point to (4, 1.6) in x-y-plot coordinates
+    //line->setHead(QCPLineEnding::esSpikeArrow);
+
     this->spikePlot->replot();
 
     return true;
@@ -317,14 +364,16 @@ bool DataProvider::parseLatestReport()
 
 void DataProvider::setupReportWatcher()
 {
-    watcher = new QFileSystemWatcher(this);
+    // TODO: REMOVE ME!!! SHOULD NOT BE NEEDED ANYMORE SOON!!
+
+    /*watcher = new QFileSystemWatcher(this);
     // use a file as watch-path which is definitely be written after the files we are interested in
     watcher->addPath(SettingsDialog::getInstance()->settings().spinPackPath+"/reports/latest/chip_sdram_usage_by_core.rpt");
     connect(watcher, SIGNAL(directoryChanged(const QString&)), this, SLOT(reportChanged(const QString&)));
     connect(watcher, SIGNAL(fileChanged(const QString&)), this, SLOT(reportChanged(const QString&)));
 
     if(!this->parseLatestReport())
-        qDebug() << "Error: parse latest report was *not* successfully completed.";
+        qDebug() << "Error: parse latest report was *not* successfully completed.";*/
 }
 
 void DataProvider::reportChanged(const QString& path)
@@ -387,6 +436,7 @@ void DataProvider::readData()
                 {
                     // TODO: read in "Machine time step" from report file machine_structure.rpt and use this as scale factor
 
+                    // should be 1000.0 for a timestep of 1.0
                     double key = scpTime/10000.0;//QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - this->getTimeLastParsedInMs()/1000.0;
                     uint graphID = subvertex->vertex->graphOffset + dataNeuronID;
                     this->spikePlot->graph(graphID)->addData(key, graphID);

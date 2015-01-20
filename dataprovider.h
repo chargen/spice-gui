@@ -13,6 +13,7 @@
 #include <QtSerialPort/QSerialPort>
 
 #include "can/muscleDriverCANInterface.h"
+#include "dbconnection.h"
 
 class MainWindow;
 
@@ -113,6 +114,16 @@ private:
     QCustomPlot *spikePlot;
 
     QFileSystemWatcher* watcher;
+
+    DBConnection* dbConnection;
+
+    QMutex mutex;
+    float dutyCycle[MAX_DRIVERS_AND_JOINTS];
+    float omega[MAX_DRIVERS_AND_JOINTS];
+    int32_t encoderPosition[MAX_DRIVERS_AND_JOINTS];
+    int16_t current[MAX_DRIVERS_AND_JOINTS];
+    int16_t displacement[MAX_DRIVERS_AND_JOINTS];
+    int16_t jointPosition[MAX_DRIVERS_AND_JOINTS];
 };
 
 #endif // DATAPROVIDER_H

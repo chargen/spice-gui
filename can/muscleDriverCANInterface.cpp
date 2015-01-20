@@ -6,6 +6,8 @@
  */
 
 #include "muscleDriverCANInterface.h"
+#include "../dataprovider.h"
+
 #include <stdio.h>
 #include <iostream>
 #include <ios>
@@ -13,18 +15,95 @@
 
 #include <QSettings>
 #include <QDir>
-#include<QTextStream>
+#include <QTextStream>
 
 //pointer to current instantiation of CAN interface
 MuscleDriverCANInterface * currentCanInterface;
 
 
+MuscleDriverCANInterface::MuscleDriverCANInterface(int cycleTimeInMilliSeconds)
+{
+    m_cycleCount = 0;
+    accutime =  0;
+    motorDriveOn = 0;
+    loggingEnabled = false;
+    m_reference1 = 0.0;
+    m_reference2 = 0.0;
+
+    //read init file
+    readInit();
+
+    std::cout << "Creating CAN connection:" << endl;
+    initCAN();
+
+    std::cout << "Creating timer event loop:" << endl;
+    //start the timer thread
+
+    /*
+    m_thread = new QThread(this);
+    QTimer* timer = new QTimer(0); // _not_ this!
+    timer->setInterval(1);
+    timer->moveToThread(m_thread);
+    // Use a direct connection to make sure that doIt() is called from m_thread.
+    connect(timer, SIGNAL(timeout()), SLOT(doIt()), Qt::DirectConnection);
+    // Make sure the timer gets started from m_thread.
+    QObject::connect(m_thread, SIGNAL(started()), timer, SLOT(start()));
+    m_thread->start();
+    */
+
+    timerThread = new QThread(this);
+    //userInterfaceThread = new QThread(this);
+
+    cout << "timer: " << timerThread->currentThread() << endl;
+
+    //create timer with x ms interval
+    QTimer* timer = new QTimer(0);
+    timer->setInterval(cycleTimeInMilliSeconds);
+    //timer->start();
+    //create user interface timer
+    //QTimer *userInterfaceTimer = new QTimer(0);
+    //userInterfaceTimer->setSingleShot(true);
+    //userInterfaceTimer->setInterval(200); //every 200ms
+    //userInterfaceTimer->start();
+
+    std::cout << "Timers Created" << endl;
+
+    //let timer run in this thread
+    timer->moveToThread(timerThread);
+    connect(timer, SIGNAL(timeout()), this, SLOT(cyclicProcessor()));
+    connect(timerThread, SIGNAL(started()), timer, SLOT(start()));
+
+    std::cout << "Started Timer Event loop:" << endl;
+
+
+
+
+    //userInterfaceThread->start();
+    timerThread->start();
+
+    // timerThread->exec();
+    // userInterfaceThread->exec();
+
+    cout << "timer thread:" << timerThread->currentThreadId() << endl;
+    //cout<<"userInterface thread:"<<userInterfaceThread->currentThreadId()<<endl;
+
+    //qDebug() << QThread::currentThreadId();
+    //exec thread
+    std::cout << "Set-up time verification system:" << endl;
+
+    std::cout << endl << endl << "--------------------------------" << endl;
+    cout << "Thread ID init Thread: " << QThread::currentThreadId() << endl;
+}
+
+MuscleDriverCANInterface::~MuscleDriverCANInterface()
+{
+    timerThread->terminate();
+}
+
 /*
  * This is the main timer driven event loop where
  * control functionality should be implemented.
  */
-
-
 void MuscleDriverCANInterface::cyclicProcessor()
 {
 	static int firstTime=1;
@@ -112,49 +191,68 @@ void MuscleDriverCANInterface::cyclicProcessor()
 
 
 
-	float error;
-	float kp=3;
-	float baseDrive = 0; //base drive can be added to create pre-tension in drives
-	float pControl;
-	float centredJointPosition;
-	float reference;
-	float leftDriveValue;
-	float rightDriveValue;
-	float driveLimit=800.0;
+    float error;
+    float kp=3;
+    float baseDrive = 0; //base drive can be added to create pre-tension in drives
+    float pControl;
+    float centredJointPosition;
+    //float reference;
+    float leftDriveValue;
+    float rightDriveValue;
+    float driveLimit=800.0;
 
 	//here, we use the joint[0]  and set the centre position to zero
-	//centredJointPosition=jointData[0].s.jointPosition - jointMidPoint[0];
+    centredJointPosition=jointData[0].s.jointPosition - jointMidPoint[0];
 
-	//error= (  m_reference - centredJointPosition );
+    error = (m_reference1 - centredJointPosition);
 
-	pControl=kp *  error;
+    pControl = kp *  error;
 
 	//we mount motor driver  motor board [1] on the side of decreasing (left) joint position,
 	// board [0] on the increasing side.
 
 	//consequently we drive
   	//insert limits here if desired
-	rightDriveValue =  + pControl + baseDrive;
-	leftDriveValue  =  - pControl + baseDrive;
+    rightDriveValue =  + pControl + baseDrive;
+    leftDriveValue  =  - pControl + baseDrive;
 
 
 	//limit drive signals if desired here
 	//reminder, DC between -4000 and +4000
-/*
-	if (rightDriveValue> driveLimit )
+
+    if(rightDriveValue> driveLimit)
 		rightDriveValue=driveLimit;
 
 	//we only allow tendon pulling, so negative drives are not possible
-	if (rightDriveValue < 0.0 )
-		rightDriveValue = 0.0 ;
+    if(rightDriveValue < 0.0 )
+        rightDriveValue = 0.0;
 
-	if (leftDriveValue > driveLimit)
+    if(leftDriveValue > driveLimit)
 		leftDriveValue = driveLimit;
 
 	//we only allow tendon pulling, so negative drives are not possible
-	if (leftDriveValue < 0.0)
+    if(leftDriveValue < 0.0)
 		leftDriveValue = 0.0;
-*/
+
+    // TODO: send serial
+
+    // note: im code oben reference value = set point, nicht duty-cycle
+
+    // 2 x "@FEFFFE40.000003ff"
+        // 32 bit integer jeweils - motor
+    // setpoint -> angle target
+        // int32_t
+    // 2 x error (hier: error) nehmen, zwei errors, für jeden motor einen
+        //
+
+    // note: 1ms wait after sending each can packet
+
+
+
+
+
+
+
 
 	//supply data to CAN interface
 
@@ -179,6 +277,22 @@ void MuscleDriverCANInterface::cyclicProcessor()
 
 	//provide data on CAN bus
 	sendMotorCommands();
+
+
+
+    //
+    /*fileOutput<<time<<",";
+    for (int i=0;i<MAX_DRIVERS_AND_JOINTS;i++)
+    {
+        ;
+        fileOutput<<motorCommand[i].s.dutyCycle<<","<<motorTransmitData[i].s.encoderPosition<<","<<motorTransmitData[i].s.omega<<"," <<motorTransmitAuxData[i].s.displacement<<","<<motorTransmitAuxData[i].s.current<<","<<jointData[i].s.jointPosition<<",";
+    }*/
+
+
+
+
+
+
 
 	//log data if desired
 	logAllData(accutime);
@@ -206,12 +320,12 @@ void CANInstantiation::rxCallback(canNotifyData * rxNotifyData)
 
 void MuscleDriverCANInterface::handleRxData(canNotifyData * rxNotifyData)
 {
-	int handle;
+    //int handle;
 	    long id;
 	    char data[8];
 	    unsigned int dlc, flags;
 	    unsigned long timestamp;
-	    STATUS_CODE stat;
+        //STATUS_CODE stat;
 
 
 	 while (canERR_NOMSG != canRead(busHandle0, &id, data, &dlc, &flags, &timestamp))
@@ -238,112 +352,11 @@ void MuscleDriverCANInterface::handleRxData(canNotifyData * rxNotifyData)
 	 }
 }
 
-
-
-
-MuscleDriverCANInterface::MuscleDriverCANInterface(int cycleTimeInMilliSeconds)
-{
-		m_cycleCount=0;
-		accutime=0;
-		motorDriveOn=0;
-		loggingEnabled=false;
-        m_reference1=0.0;
-        m_reference2=0.0;
-
-		//read init file
-		readInit();
-
-		std::cout<<"Creating CAN connection:"<<endl;
-		initCAN();
-
-		std::cout<<"Creating timer event loop:"<<endl;
-		//start the timer thread
-
-		/*
-		 *
-
-
-			m_thread = new QThread(this);
-			QTimer* timer = new QTimer(0); // _not_ this!
-			timer->setInterval(1);
-			timer->moveToThread(m_thread);
-			// Use a direct connection to make sure that doIt() is called from m_thread.
-			connect(timer, SIGNAL(timeout()), SLOT(doIt()), Qt::DirectConnection);
-			// Make sure the timer gets started from m_thread.
-			QObject::connect(m_thread, SIGNAL(started()), timer, SLOT(start()));
-			m_thread->start();
-
-
-		 */
-
-         timerThread = new QThread(this);
-		 //userInterfaceThread = new QThread(this);
-
-		 cout<<"timer: "<< timerThread->currentThread()<<endl;
-
-
-
-		//create timer with 1ms interval
-		QTimer* timer = new QTimer(0);
-		timer->setInterval(cycleTimeInMilliSeconds);
-		//timer->start();
-		//create user interface timer
-		//QTimer *userInterfaceTimer = new QTimer(0);
-		//userInterfaceTimer->setSingleShot(true);
-		//userInterfaceTimer->setInterval(200); //every 200ms
-		//userInterfaceTimer->start();
-
-		std::cout<<"Timers Created"<<endl;
-
-		//let timer run in this thread
-		timer->moveToThread(timerThread);
-		connect(timer, SIGNAL(timeout()), this, SLOT(cyclicProcessor()));
-	    connect(timerThread, SIGNAL(started()), timer, SLOT(start()));
-
-
-
-
-
-	    //userInterfaceTimer->moveToThread(userInterfaceThread);
-	    //connect(userInterfaceTimer,SIGNAL(timeout()),this, SLOT(userInterface()))	;
-	    //connect(userInterfaceThread, SIGNAL(started()), userInterfaceTimer, SLOT(start()));
-
-		std::cout<<"Started Timer Event loop:"<<endl;
-
-
-
-
-	    //userInterfaceThread->start();
-	    timerThread->start();
-
-	  //  timerThread->exec();
-	   // userInterfaceThread->exec();
-
-	    cout<<"timer thread:"<<timerThread->currentThreadId()<<endl;
-	    //cout<<"userInterface thread:"<<userInterfaceThread->currentThreadId()<<endl;
-
-	    //qDebug() << QThread::currentThreadId();
-		//exec thread
-		std::cout<<"Set-up time verification system:"<<endl;
-
-		std::cout<<endl<<endl<<"--------------------------------"<<endl;
-		cout<<"Thread ID init Thread: "<<QThread::currentThreadId()<<endl;
-
-
-
-
-}
-
-MuscleDriverCANInterface::~MuscleDriverCANInterface()
-{
-    timerThread->terminate();
-}
-
 int MuscleDriverCANInterface::initCAN()
 {
 
 		 string myString;
-		 CAN_MESSAGE myCanMessage, canSentMessage;
+         //CAN_MESSAGE myCanMessage, canSentMessage;
 		 STATUS_CODE myCanStatus;
 		 busHandle0=myCan.openCanChannel(0);
 
@@ -409,6 +422,7 @@ int MuscleDriverCANInterface::sendMotorCommands()
 		  			  	//	myCan.printCanMessage(canSentMessage);
 		  myCan.sendCanMessage(busHandle0,canSentMessage);
       }
+      return 0;
 }
 
 int MuscleDriverCANInterface::readInit()
@@ -513,7 +527,7 @@ int MuscleDriverCANInterface::readInit()
 
 
 		 }
-
+    return 0;
 }
 
 /*
@@ -560,7 +574,6 @@ void MuscleDriverCANInterface::printRxData(void)
 
 void MuscleDriverCANInterface::logAllData(unsigned long time)
 {
-
 	if (loggingEnabled)
 	{
 		 count++;

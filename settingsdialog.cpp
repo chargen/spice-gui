@@ -1,10 +1,14 @@
 #include "settingsdialog.h"
 #include "ui_settingsdialog.h"
 
+#include <fstream>
+#include <sstream>
+
 #include <QtSerialPort/QSerialPortInfo>
 #include <QIntValidator>
 #include <QLineEdit>
 #include <QFileDialog>
+#include <QRegExp>
 
 QT_USE_NAMESPACE
 
@@ -16,9 +20,7 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    spinnakerPackageDir = new QDir("/home");
-
-    connect(ui->spinnakerPackageButton, SIGNAL(clicked()), this, SLOT(browseSpinnakerPackage()));
+    connect(ui->spynnakerCfgButton, SIGNAL(clicked()), this, SLOT(browseSpynnakerCfg()));
 
     intValidator = new QIntValidator(0, 4000000, this);
 
@@ -41,8 +43,10 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
     ui->localEchoCheckBox->setChecked(true);
     ui->localEchoCheckBox->setEnabled(false);
     ui->liveSpikePortEdit->setText(QString::number(17895));
-    ui->spinnakerPackageEdit->setText("/home/sjentzsch/HBP/SpiNNaker/spinnaker_package_jun14");
-    spinnakerPackageDir = new QDir(ui->spinnakerPackageEdit->text());
+    QString user = qgetenv("USER");
+    if(user.isEmpty())
+        user = qgetenv("USERNAME");
+    ui->spynnakerCfgEdit->setText("/home/"+user+"/.spynnaker.cfg");
 
     updateSettings();
 }
@@ -157,7 +161,40 @@ void SettingsDialog::fillPortsInfo()
 
 void SettingsDialog::updateSettings()
 {
-    currentSettings.spinPackPath = ui->spinnakerPackageEdit->text();
+    currentSettings.spynnakerCfgPath = ui->spynnakerCfgEdit->text();
+
+    currentSettings.isValidSpynnakerCfg = false;
+
+    std::ifstream spynnakerCfgFile(currentSettings.spynnakerCfgPath.toStdString());
+    std::string strCfg;
+
+    if(spynnakerCfgFile.good())
+    {
+        qDebug() << "Try parsing given spynnaker.cfg ...";
+        spynnakerCfgFile.open(currentSettings.spynnakerCfgPath.toStdString());
+
+        if(spynnakerCfgFile.is_open())
+        {
+            std::stringstream buffer;
+            buffer << spynnakerCfgFile.rdbuf();
+            strCfg = buffer.str();
+            spynnakerCfgFile.close();
+
+            QRegExp regParamInfo("^.*[Reports].*defaultReportFilePath\\s*=\\s*(\\S*)\\s*.*defaultApplicationDataFilePath\\s*=\\s*(\\S*)\\s*.*$");
+            if(regParamInfo.indexIn(QString::fromStdString(strCfg)) >= 0)
+            {
+                currentSettings.reportFilePath = regParamInfo.cap(1);
+                currentSettings.applicationDataFilePath = regParamInfo.cap(2);
+                currentSettings.isValidSpynnakerCfg = true;
+
+                qDebug() << "defaultReportFilePath =" << currentSettings.reportFilePath;
+                qDebug() << "defaultApplicationDataFilePath =" << currentSettings.applicationDataFilePath;
+                qDebug() << "Parse spynnaker.cfg: Success.";
+            }
+            else
+                qDebug() << "Parse spynnaker.cfg: No regexp match.";
+        }
+    }
 
     currentSettings.name = ui->serialPortInfoListBox->currentText();
 
@@ -191,12 +228,14 @@ void SettingsDialog::updateSettings()
     currentSettings.liveSpikePort = ui->liveSpikePortEdit->text().toUShort();
 }
 
-void SettingsDialog::browseSpinnakerPackage()
+void SettingsDialog::browseSpynnakerCfg()
 {
-    QString path = QFileDialog::getExistingDirectory(this, tr("Set SpiNNaker-Package Directory"), spinnakerPackageDir->path(), QFileDialog::ShowDirsOnly);
+    // somehow Qt cannot be set to show hidden files by default. The user has to press STRG+H manually!
+
+    QString path = QFileDialog::getOpenFileName(this, tr("Locate personal spynnaker.cfg (press STRG+H to show hidden files!)"), "/home/", tr("Config files (.*.cfg)"));
+
     if(!path.isNull())
     {
-        spinnakerPackageDir->setPath(path);
-        ui->spinnakerPackageEdit->setText(path);
+        ui->spynnakerCfgEdit->setText(path);
     }
 }

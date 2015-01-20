@@ -46,6 +46,7 @@ public:
 	 */
 	 CHANNEL_HANDLE openCanChannel(int channelId);
 
+    STATUS_CODE closeCanChannel(CHANNEL_HANDLE channelId);
 
 	/*
 	 *

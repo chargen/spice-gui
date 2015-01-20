@@ -223,19 +223,19 @@
      </property>
      <layout class="QGridLayout" name="gridLayout_5">
       <item row="1" column="0">
-       <widget class="QLineEdit" name="spinnakerPackageEdit"/>
+       <widget class="QLineEdit" name="spynnakerCfgEdit"/>
       </item>
       <item row="1" column="1">
-       <widget class="QPushButton" name="spinnakerPackageButton">
+       <widget class="QPushButton" name="spynnakerCfgButton">
         <property name="text">
          <string>Browse</string>
         </property>
        </widget>
       </item>
       <item row="0" column="0">
-       <widget class="QLabel" name="spinnakerPackageLabel">
+       <widget class="QLabel" name="spynnakerCfgLabel">
         <property name="text">
-         <string>Location of the SpiNNaker Package:</string>
+         <string>Location of the personal spynnaker.cfg:</string>
         </property>
        </widget>
       </item>

@@ -23,7 +23,10 @@ class SettingsDialog : public QDialog
 
 public:
     struct Settings {
-        QString spinPackPath;
+        QString spynnakerCfgPath;
+        QString reportFilePath;
+        QString applicationDataFilePath;
+        bool isValidSpynnakerCfg;
 
         QString name;
         qint32 baudRate;
@@ -50,7 +53,7 @@ private slots:
     void showPortInfo(int idx);
     void apply();
     void checkCustomBaudRatePolicy(int idx);
-    void browseSpinnakerPackage();
+    void browseSpynnakerCfg();
 
 private:
     static SettingsDialog* settingsDialog;
@@ -64,7 +67,6 @@ private:
     Ui::SettingsDialog *ui;
     Settings currentSettings;
     QIntValidator *intValidator;
-    QDir* spinnakerPackageDir;
 };
 
 #endif // SETTINGSDIALOG_H

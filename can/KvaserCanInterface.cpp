@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <iostream>
 
+#include <QtGlobal>
+
 #include "KvaserCanInterface.h"
 
 using namespace std;
@@ -42,7 +44,17 @@ STATUS_CODE KvaserCanInterface::getAvailableCanChannels(int &numberOfChannels)
 	 handle =  canOpenChannel(channelId , canWANT_EXCLUSIVE);
 	 return handle;
  }
-/*
+
+ STATUS_CODE KvaserCanInterface::closeCanChannel(CHANNEL_HANDLE channelId)
+ {
+     Q_UNUSED(channelId);
+
+     return 0;
+ }
+
+
+
+ /*
  *
  */
  STATUS_CODE KvaserCanInterface::configureCanChannel(int busHandle, int baudRate, int silent)
@@ -125,21 +137,27 @@ STATUS_CODE KvaserCanInterface::getAvailableCanChannels(int &numberOfChannels)
  }
 
 
- STATUS_CODE KvaserCanInterface::sendCanMessageWait(CHANNEL_HANDLE busHandle,const CAN_MESSAGE &canMessage, long timeOut)
+ STATUS_CODE KvaserCanInterface::sendCanMessageWait(CHANNEL_HANDLE busHandle, const CAN_MESSAGE &canMessage, long timeOut)
  {
+     Q_UNUSED(busHandle);
+     Q_UNUSED(canMessage);
+     Q_UNUSED(timeOut);
+
 	 return 0;
  }
 	 /* \brief Waits until all CAN messages for the specified handle are sent, or the timeout period expires. d
 	  *
 	 */
-STATUS_CODE KvaserCanInterface::sendCanMessageSync(CHANNEL_HANDLE busHandle,long timeOut)
+STATUS_CODE KvaserCanInterface::sendCanMessageSync(CHANNEL_HANDLE busHandle, long timeOut)
  {
+     Q_UNUSED(busHandle);
+     Q_UNUSED(timeOut);
+
 	 return 0;
  }
 
  STATUS_CODE KvaserCanInterface::readCanMessage(CHANNEL_HANDLE busHandle, CAN_MESSAGE &canMessage )
  {
-
 	 unsigned long rxTime;
 	 return canRead(busHandle,
 			 &(canMessage.messageID),
@@ -149,8 +167,12 @@ STATUS_CODE KvaserCanInterface::sendCanMessageSync(CHANNEL_HANDLE busHandle,long
 	     	 &rxTime);
 
  }
- STATUS_CODE KvaserCanInterface::readCanMessageWait(CHANNEL_HANDLE busHandle, CAN_MESSAGE &canMessage,  long timeOut )
+ STATUS_CODE KvaserCanInterface::readCanMessageWait(CHANNEL_HANDLE busHandle, CAN_MESSAGE &canMessage, long timeOut)
  {
+     Q_UNUSED(busHandle);
+     Q_UNUSED(canMessage);
+     Q_UNUSED(timeOut);
+
 	 return 0;
  }
 
@@ -174,6 +196,7 @@ STATUS_CODE KvaserCanInterface::sendCanMessageSync(CHANNEL_HANDLE busHandle,long
 
  void RxNotifyCallback(canNotifyData * rxNotifyData)
  {
+     Q_UNUSED(rxNotifyData);
 
 	 //KvaserCanInterface *myInstance=(KvaserCanInterface*) rxNotifyData->tag;
 	 //myInstance->rxCallback();
