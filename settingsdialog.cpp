@@ -46,7 +46,9 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
     QString user = qgetenv("USER");
     if(user.isEmpty())
         user = qgetenv("USERNAME");
-    ui->spynnakerCfgEdit->setText("/home/"+user+"/.spynnaker.cfg");
+    //ui->spynnakerCfgEdit->setText("/home/"+user+"/.spynnaker.cfg");
+    //TODO: change it if you want to use the new/old SpiNNaker package release
+    ui->spynnakerCfgEdit->setText("/home/sjentzsch/HBP/SpiNNaker/old/spinnaker_package_jun14");
 
     updateSettings();
 }
@@ -163,9 +165,12 @@ void SettingsDialog::updateSettings()
 {
     currentSettings.spynnakerCfgPath = ui->spynnakerCfgEdit->text();
 
+    currentSettings.reportFilePath = "";
+    currentSettings.applicationDataFilePath = "";
     currentSettings.isValidSpynnakerCfg = false;
 
-    std::ifstream spynnakerCfgFile(currentSettings.spynnakerCfgPath.toStdString());
+    // TODO: comment me in again!
+    /*std::ifstream spynnakerCfgFile(currentSettings.spynnakerCfgPath.toStdString());
     std::string strCfg;
 
     if(spynnakerCfgFile.good())
@@ -194,7 +199,7 @@ void SettingsDialog::updateSettings()
             else
                 qDebug() << "Parse spynnaker.cfg: No regexp match.";
         }
-    }
+    }*/
 
     currentSettings.name = ui->serialPortInfoListBox->currentText();
 

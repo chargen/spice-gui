@@ -34,7 +34,7 @@ DataProvider::DataProvider(QObject *parent) :
 
     this->canInterface = NULL;
 
-    this->dbConnection = new DBConnection(this);
+    //this->dbConnection = new DBConnection(this);
     // test code starts!!
 
     // test code ends!!
@@ -114,15 +114,15 @@ bool DataProvider::parseLatestReport()
     //  3) placement_by_core.rpt
 
     SettingsDialog::Settings currentSettings = SettingsDialog::getInstance()->settings();
-/*
+
     // 1) time_stamp
     reportID.clear();
-    std::ifstream reportFile1(currentSettings.spinPackPath.toStdString()+"/reports/latest/time_stamp");
+    std::ifstream reportFile1(currentSettings.spynnakerCfgPath.toStdString()+"/reports/latest/time_stamp");
     while(!reportFile1.is_open())
     {
         qDebug() << "ParseLatestReport: open time_stamp file...";
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        reportFile1.open(currentSettings.spinPackPath.toStdString()+"/reports/latest/time_stamp");
+        reportFile1.open(currentSettings.spynnakerCfgPath.toStdString()+"/reports/latest/time_stamp");
     }
 
     std::getline(reportFile1, reportID);
@@ -131,14 +131,14 @@ bool DataProvider::parseLatestReport()
 
     // 2) placement_by_vertex.rpt
     vecVertices.clear();
-    std::ifstream reportFile3(currentSettings.spinPackPath.toStdString()+"/reports/latest/placement_by_vertex.rpt");
+    std::ifstream reportFile3(currentSettings.spynnakerCfgPath.toStdString()+"/reports/latest/placement_by_vertex.rpt");
     std::string strReport3;
 
     while(!reportFile3.is_open())
     {
         qDebug() << "ParseLatestReport: open placement_by_vertex file...";
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        reportFile3.open(currentSettings.spinPackPath.toStdString()+"/reports/latest/placement_by_vertex.rpt");
+        reportFile3.open(currentSettings.spynnakerCfgPath.toStdString()+"/reports/latest/placement_by_vertex.rpt");
     }
 
     std::stringstream buffer;
@@ -195,14 +195,14 @@ bool DataProvider::parseLatestReport()
 
     // 3) placement_by_core.rpt
     mapPopByCoord.clear();
-    std::ifstream reportFile(currentSettings.spinPackPath.toStdString()+"/reports/latest/placement_by_core.rpt");
+    std::ifstream reportFile(currentSettings.spynnakerCfgPath.toStdString()+"/reports/latest/placement_by_core.rpt");
     std::string strReport;
 
     while(!reportFile.is_open())
     {
         qDebug() << "ParseLatestReport: open placement_by_core file...";
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        reportFile.open(currentSettings.spinPackPath.toStdString()+"/reports/latest/placement_by_core.rpt");
+        reportFile.open(currentSettings.spynnakerCfgPath.toStdString()+"/reports/latest/placement_by_core.rpt");
     }
 
     std::stringstream buffer2;
@@ -275,9 +275,6 @@ bool DataProvider::parseLatestReport()
             mapPopByCoord[std::make_tuple(chip_x, chip_y, core_id)] = SubvertexInfo(vertex, sviSliceStart, sviSliceEnd, sviSliceLength);
         }
     }
-*/
-    // TODO: FIXME
-    return false;
 
     // set timeLastParsedInMs
     this->timeLastParsedInMs = QDateTime::currentDateTime().toMSecsSinceEpoch();
@@ -366,14 +363,14 @@ void DataProvider::setupReportWatcher()
 {
     // TODO: REMOVE ME!!! SHOULD NOT BE NEEDED ANYMORE SOON!!
 
-    /*watcher = new QFileSystemWatcher(this);
+    watcher = new QFileSystemWatcher(this);
     // use a file as watch-path which is definitely be written after the files we are interested in
-    watcher->addPath(SettingsDialog::getInstance()->settings().spinPackPath+"/reports/latest/chip_sdram_usage_by_core.rpt");
+    watcher->addPath(SettingsDialog::getInstance()->settings().spynnakerCfgPath+"/reports/latest/chip_sdram_usage_by_core.rpt");
     connect(watcher, SIGNAL(directoryChanged(const QString&)), this, SLOT(reportChanged(const QString&)));
     connect(watcher, SIGNAL(fileChanged(const QString&)), this, SLOT(reportChanged(const QString&)));
 
     if(!this->parseLatestReport())
-        qDebug() << "Error: parse latest report was *not* successfully completed.";*/
+        qDebug() << "Error: parse latest report was *not* successfully completed.";
 }
 
 void DataProvider::reportChanged(const QString& path)
