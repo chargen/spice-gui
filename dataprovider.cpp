@@ -25,6 +25,7 @@ DataProvider::DataProvider(QObject *parent) :
 
     this->mainWindow = NULL;
     this->spikePlot = NULL;
+    this->canPlot = NULL;
 
     this->timeLastParsedInMs = 0;
 
@@ -434,7 +435,8 @@ void DataProvider::readData()
                     // TODO: read in "Machine time step" from report file machine_structure.rpt and use this as scale factor
 
                     // should be 1000.0 for a timestep of 1.0
-                    double key = scpTime/10000.0;//QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - this->getTimeLastParsedInMs()/1000.0;
+                    // before: 10.000
+                    double key = scpTime/1000.0*0.6;//QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - this->getTimeLastParsedInMs()/1000.0;
                     uint graphID = subvertex->vertex->graphOffset + dataNeuronID;
                     this->spikePlot->graph(graphID)->addData(key, graphID);
                 }
@@ -446,6 +448,11 @@ void DataProvider::readData()
 void DataProvider::setSpikePlot(QCustomPlot *spikePlot_)
 {
     this->spikePlot = spikePlot_;
+}
+
+void DataProvider::setCanPlot(QCustomPlot *canPlot_)
+{
+    this->canPlot = canPlot_;
 }
 
 void DataProvider::displayError(QAbstractSocket::SocketError socketError)
@@ -516,7 +523,7 @@ void DataProvider::startCan()
         qDebug() << "Start CAN ...";
 
         // start a CAN interface with a 10ms cycle time
-        canInterface = new MuscleDriverCANInterface(10);
+        canInterface = new MuscleDriverCANInterface(10, this->canPlot);
         /*QThread* canThread = new QThread;
         canInterface->moveToThread(canThread);
         canThread->start();*/

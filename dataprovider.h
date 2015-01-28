@@ -75,6 +75,7 @@ public:
     void setupReportWatcher();
 
     void setSpikePlot(QCustomPlot *spikePlot_);
+    void setCanPlot(QCustomPlot *canPlot_);
 
     qint64 getTimeLastParsedInMs() {return this->timeLastParsedInMs;}
 
@@ -112,6 +113,7 @@ private:
     qint64 timeLastParsedInMs;
 
     QCustomPlot *spikePlot;
+    QCustomPlot *canPlot;
 
     QFileSystemWatcher* watcher;
 

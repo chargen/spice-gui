@@ -19,6 +19,7 @@
 #include <QElapsedTimer>
 
 #include "KvaserCanInterface.h"
+#include "../qcustomplot.h"
 
 //for a fast 1 DOF system we only use 2 drivers with a 1ms control loop,
 //otherwise the CAN bandwidth is not sufficient.
@@ -74,7 +75,7 @@ class MuscleDriverCANInterface : public QObject
     Q_OBJECT
 
 public:
-    MuscleDriverCANInterface(int cycleTimeInMilliSeconds);
+    MuscleDriverCANInterface(int cycleTimeInMilliSeconds, QCustomPlot *canPlot_ = NULL);
     ~MuscleDriverCANInterface();
 
     int mode() const {return m_mode;}
@@ -139,6 +140,8 @@ private:
     QThread *timerThread;
     // QThread  *userInterfaceThread;
     qint64 nanoSec;
+
+    QCustomPlot *canPlot;
 };
 
 #endif /* MUSCLEDRIVERCANINTERFACE_H_ */

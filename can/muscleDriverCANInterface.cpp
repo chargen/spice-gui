@@ -12,6 +12,8 @@
 #include <iostream>
 #include <ios>
 #include <iomanip>
+#include <chrono>
+#include <thread>
 
 #include <QSettings>
 #include <QDir>
@@ -21,7 +23,7 @@
 MuscleDriverCANInterface * currentCanInterface;
 
 
-MuscleDriverCANInterface::MuscleDriverCANInterface(int cycleTimeInMilliSeconds)
+MuscleDriverCANInterface::MuscleDriverCANInterface(int cycleTimeInMilliSeconds, QCustomPlot *canPlot_)
 {
     m_cycleCount = 0;
     accutime =  0;
@@ -32,6 +34,8 @@ MuscleDriverCANInterface::MuscleDriverCANInterface(int cycleTimeInMilliSeconds)
 
     //read init file
     readInit();
+
+    this->canPlot = canPlot_;
 
     std::cout << "Creating CAN connection:" << endl;
     initCAN();
@@ -122,14 +126,14 @@ void MuscleDriverCANInterface::cyclicProcessor()
 
 	}
 
-	//just a few timing values in case we would like to record its
+    //just a few timing values in case we would like to record it
 	//accutime=0;
 
 	nanoSec = elapsedTime.nsecsElapsed();
 	elapsedTime.restart();
 
 	//accumulate the delta-times to micro-second precision running time
-	accutime+=(unsigned long) (nanoSec+500)/1000;
+    accutime += (unsigned long) (nanoSec+500)/1000;
 	//cout<<"ns: "<<accutime<<endl;
 
 	//make a copy of the CAN data, this is safe and contains mutex
@@ -141,7 +145,9 @@ void MuscleDriverCANInterface::cyclicProcessor()
 //Fix offset of the joint to move the .
 
     // should be obsolete according to Christoph !!
-	jointData[0].s.jointPosition = (jointData[0].s.jointPosition + 2048 ) % 4096;
+    //jointData[0].s.jointPosition = (jointData[0].s.jointPosition + 2048 ) % 4096;
+
+    jointData[0].s.jointPosition = (jointData[0].s.jointPosition - 2048 );// % 4096;
 
 	//printRxData();
 
@@ -180,7 +186,32 @@ void MuscleDriverCANInterface::cyclicProcessor()
 	//example: send motor 1 duty cycle to -20%
 	//motorCommand[1].s.dutyCycle=-800.0;
 
+    if(this->canPlot != NULL)
+    {
+        this->canPlot->graph(0)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, motorTransmitAuxData[0].s.displacement);
+        this->canPlot->graph(1)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, motorTransmitAuxData[1].s.displacement);
+        this->canPlot->graph(2)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, jointData[0].s.jointPosition);
+    }
 
+    //::std::cout << "jointPosition: " << jointData[0].s.jointPosition << "\tspring 1: " << motorTransmitAuxData[0].s.displacement << "\tspring 2: " << motorTransmitAuxData[1].s.displacement << ::std::endl;
+
+
+    int16_t target_current_2 = 30;
+
+    ::std::cout << "current 1: " << motorTransmitAuxData[0].s.current << "\tcurrent 2: " << motorTransmitAuxData[1].s.current << ::std::endl;
+
+
+    int16_t error_2 = 0;
+    int16_t curr_min_target_2 = motorTransmitAuxData[1].s.current - target_current_2;
+    if(curr_min_target_2 < 0)
+    {
+        if(curr_min_target_2 < - 100)
+            error_2 = 1000;
+        else
+            error_2 = -10 * curr_min_target_2;
+    }
+
+    ::std::cout << "error 2: " << error_2 << ::std::endl;
 
 
 
@@ -192,16 +223,16 @@ void MuscleDriverCANInterface::cyclicProcessor()
 
 
     float error;
-    float kp=3;
+    float kp = 3;
     float baseDrive = 0; //base drive can be added to create pre-tension in drives
     float pControl;
     float centredJointPosition;
     //float reference;
     float leftDriveValue;
     float rightDriveValue;
-    float driveLimit=800.0;
+    float driveLimit = 800.0;
 
-	//here, we use the joint[0]  and set the centre position to zero
+    //here, we use the joint[0] and set the centre position to zero
     centredJointPosition=jointData[0].s.jointPosition - jointMidPoint[0];
 
     error = (m_reference1 - centredJointPosition);
@@ -220,8 +251,8 @@ void MuscleDriverCANInterface::cyclicProcessor()
 	//limit drive signals if desired here
 	//reminder, DC between -4000 and +4000
 
-    if(rightDriveValue> driveLimit)
-		rightDriveValue=driveLimit;
+    if(rightDriveValue > driveLimit)
+        rightDriveValue = driveLimit;
 
 	//we only allow tendon pulling, so negative drives are not possible
     if(rightDriveValue < 0.0 )
@@ -250,6 +281,39 @@ void MuscleDriverCANInterface::cyclicProcessor()
 
 
 
+    // send out error and control commands via serial interface
+    if(DataProvider::getInstance()->serial->isOpen())
+    {
+        QString valueHexString = QString::number(target_current_2, 16);
+        QString string = "@FEFFFE30.00000";
+        for(int i=0; i<3-valueHexString.length(); i++)
+            string.append("0");
+        string += valueHexString;
+        string.append("\n");
+        QByteArray data(string.toStdString().c_str());
+
+        qDebug() << "setCurrent2: " << string << " (" << string.length() << ")";
+
+        DataProvider::getInstance()->serial->write(data);
+
+        // TODO: needed? but it really hurts here, and slows down everything!!
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+        valueHexString = QString::number(error_2, 16);
+        string = "@FEFFFE31.00000";
+        for(int i=0; i<3-valueHexString.length(); i++)
+            string.append("0");
+        string += valueHexString;
+        string.append("\n");
+        QByteArray data2(string.toStdString().c_str());
+
+        qDebug() << "errorCurrent2: " << string << " (" << string.length() << ")";
+
+        DataProvider::getInstance()->serial->write(data2);
+
+        // TODO: needed? but it really hurts here, and slows down everything!!
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
 
 
 
@@ -258,11 +322,7 @@ void MuscleDriverCANInterface::cyclicProcessor()
 
     motorCommand[0].s.dutyCycle = m_reference1;
 
-    motorCommand[1].s.dutyCycle = m_reference2; //*(jointData[0].s.jointPosition - 1400 );
-
-
-
-//	motorCommand[1].s.dutyCycle= leftDriveValue;
+    motorCommand[1].s.dutyCycle = m_reference2;
 
 
 
@@ -276,7 +336,9 @@ void MuscleDriverCANInterface::cyclicProcessor()
 
 
 	//provide data on CAN bus
-	sendMotorCommands();
+
+    // TODO: uncomment me !!!!!!!!!!!
+    sendMotorCommands();
 
 
 

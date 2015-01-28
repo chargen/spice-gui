@@ -56,17 +56,19 @@ CanTab::CanTab(QWidget *parent) :
     ui->canPlot->graph(3)->setScatterStyle(QCPScatterStyle::ssDisc);*/
 
     ui->canPlot->xAxis->setTickLabelType(QCPAxis::ltDateTime);
-    ui->canPlot->xAxis->setDateTimeFormat("mm:ss");
+    ui->canPlot->xAxis->setDateTimeFormat("hh:mm:ss");
     ui->canPlot->xAxis->setAutoTickStep(false);
     ui->canPlot->xAxis->setTickStep(1);
     ui->canPlot->axisRect()->setupFullAxesBox();
 
-    ui->canPlot->yAxis->setTickLabelFont(QFont(QFont().family(), 8));
+    /*ui->canPlot->yAxis->setTickLabelFont(QFont(QFont().family(), 8));
     ui->canPlot->yAxis->setAutoTicks(false);
     ui->canPlot->yAxis->setAutoTickLabels(false);
     ui->canPlot->yAxis->setTickVector(QVector<double>() << 5 << 55);
-    ui->canPlot->yAxis->setTickVectorLabels(QVector<QString>() << "sdg so\nhigh" << "Very\nhigh");
-    ui->canPlot->yAxis->setRange(0, 60);
+    ui->canPlot->yAxis->setTickVectorLabels(QVector<QString>() << "sdg so\nhigh" << "Very\nhigh");*/
+    ui->canPlot->yAxis->setRange(-850, 850);    // fixed range of the joint data
+
+    ui->canPlot->yAxis2->setRange(-10, 500);  // fixed range of the spring displacement data
 
     //ui->canPlot->yAxis->setAutoTickStep(false);
     ui->canPlot->yAxis->setAutoSubTicks(false);
@@ -77,17 +79,28 @@ CanTab::CanTab(QWidget *parent) :
     //ui->canPlot->yAxis2->setTickStep(1.0);
     ui->canPlot->yAxis2->setSubTickCount(0);
 
+    ui->canPlot->addGraph(ui->canPlot->xAxis, ui->canPlot->yAxis2);
+    ui->canPlot->graph(ui->canPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(250, 150, 50)), 5));//setPen(QPen(Qt::blue));
+
+    ui->canPlot->addGraph(ui->canPlot->xAxis, ui->canPlot->yAxis2);
+    ui->canPlot->graph(ui->canPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(250, 50, 50)), 5));//setPen(QPen(Qt::blue));
+
+    ui->canPlot->addGraph(ui->canPlot->xAxis, ui->canPlot->yAxis);
+    ui->canPlot->graph(ui->canPlot->graphCount()-1)->setPen(QPen(QBrush(Qt::blue), 5));//setPen(QPen(Qt::blue));
+    //ui->canPlot->graph(ui->canPlot->graphCount()-1)->setLineStyle(QCPGraph::lsNone);
+    //ui->canPlot->graph(ui->canPlot->graphCount()-1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 5));
+
+    ui->canPlot->replot(); // needed?
+
     // make left and bottom axes transfer their ranges to right and top axes:
     connect(ui->canPlot->xAxis, SIGNAL(rangeChanged(QCPRange)), ui->canPlot->xAxis2, SLOT(setRange(QCPRange)));
-    connect(ui->canPlot->yAxis, SIGNAL(rangeChanged(QCPRange)), ui->canPlot->yAxis2, SLOT(setRange(QCPRange)));
+    //connect(ui->canPlot->yAxis, SIGNAL(rangeChanged(QCPRange)), ui->canPlot->yAxis2, SLOT(setRange(QCPRange)));
 
-    /*DataProvider::getInstance()->setSpikePlot(ui->canPlot);
-
-    DataProvider::getInstance()->setupReportWatcher();
+    DataProvider::getInstance()->setCanPlot(ui->canPlot);
 
     // setup a timer that repeatedly calls MainWindow::realtimeDataSlot:
     connect(&dataTimer, SIGNAL(timeout()), this, SLOT(realtimeDataSlot()));
-    dataTimer.start(15); // Interval 0 means to refresh as fast as possible*/
+    dataTimer.start(20); // Interval 0 means to refresh as fast as possible
 
     /*
     QVector<QCPScatterStyle::ScatterShape> shapes;
@@ -181,7 +194,7 @@ void CanTab::realtimeDataSlot()
     ui->canPlot->replot();
 
     // calculate frames per second:
-    static double lastFpsKey;
+    /*static double lastFpsKey;
     static int frameCount;
     ++frameCount;
     if (key-lastFpsKey > 2) // average fps over 2 seconds
@@ -198,7 +211,7 @@ void CanTab::realtimeDataSlot()
             , 0);
         lastFpsKey = key;
         frameCount = 0;
-    }
+    }*/
 }
 
 void CanTab::startCAN()
