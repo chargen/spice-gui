@@ -382,6 +382,8 @@ void CANInstantiation::rxCallback(canNotifyData * rxNotifyData)
 
 void MuscleDriverCANInterface::handleRxData(canNotifyData * rxNotifyData)
 {
+    Q_UNUSED(rxNotifyData);
+
     //int handle;
 	    long id;
 	    char data[8];

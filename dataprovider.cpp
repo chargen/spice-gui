@@ -414,10 +414,10 @@ void DataProvider::readData()
         for(quint32 i=0; i<scpNumSpikes; i++)
         {
             // TODO: does this always produce the right results in the end? what if bytes are swapped in another way (e.g. twice the half)?
-            quint8 dataChipX, dataChipY, dataCoreID, dataS;
+            quint8 dataChipX, dataChipY, dataCoreID;//, dataS;
             quint16 dataLeftover, dataNeuronID;
             dataStream >> dataLeftover;
-            dataS = (dataLeftover >> 11) & 0x10;
+            //dataS = (dataLeftover >> 11) & 0x10;
             dataCoreID = (dataLeftover >> 11) & 0xF;
             dataNeuronID = (dataLeftover & 0x7FF);
             dataStream >> dataChipY;
