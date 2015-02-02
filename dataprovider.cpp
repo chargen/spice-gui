@@ -298,7 +298,7 @@ bool DataProvider::parseLatestReport()
             this->spikePlot->addGraph();
             this->spikePlot->graph(this->spikePlot->graphCount()-1)->setPen(QPen(color));
             this->spikePlot->graph(this->spikePlot->graphCount()-1)->setLineStyle(QCPGraph::lsNone);
-            this->spikePlot->graph(this->spikePlot->graphCount()-1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 5));
+            this->spikePlot->graph(this->spikePlot->graphCount()-1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssSquare, 3));
         }
     }
 

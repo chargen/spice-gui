@@ -188,18 +188,15 @@ void MuscleDriverCANInterface::cyclicProcessor()
 
     if(this->canPlot != NULL)
     {
-        this->canPlot->graph(0)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, motorTransmitAuxData[0].s.displacement);
-        this->canPlot->graph(1)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, motorTransmitAuxData[1].s.displacement);
+        // or choose displacement here !!
+        this->canPlot->graph(0)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, motorTransmitAuxData[0].s.current);
+        this->canPlot->graph(1)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, motorTransmitAuxData[1].s.current);
         this->canPlot->graph(2)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, jointData[0].s.jointPosition);
     }
 
     //::std::cout << "jointPosition: " << jointData[0].s.jointPosition << "\tspring 1: " << motorTransmitAuxData[0].s.displacement << "\tspring 2: " << motorTransmitAuxData[1].s.displacement << ::std::endl;
 
-
-    int16_t target_current_2 = 30;
-
-    ::std::cout << "current 1: " << motorTransmitAuxData[0].s.current << "\tcurrent 2: " << motorTransmitAuxData[1].s.current << ::std::endl;
-
+    int16_t target_current_2 = 40;
 
     int16_t error_2 = 0;
     int16_t curr_min_target_2 = motorTransmitAuxData[1].s.current - target_current_2;
@@ -211,7 +208,7 @@ void MuscleDriverCANInterface::cyclicProcessor()
             error_2 = -10 * curr_min_target_2;
     }
 
-    ::std::cout << "error 2: " << error_2 << ::std::endl;
+    ::std::cout << "current 2: " << motorTransmitAuxData[1].s.current << "\t(ist-soll):" << curr_min_target_2 << "\terror 2: " << error_2 << ::std::endl;
 
 
 
@@ -292,7 +289,7 @@ void MuscleDriverCANInterface::cyclicProcessor()
         string.append("\n");
         QByteArray data(string.toStdString().c_str());
 
-        qDebug() << "setCurrent2: " << string << " (" << string.length() << ")";
+        //qDebug() << "setCurrent2: " << string << " (" << string.length() << ")";
 
         DataProvider::getInstance()->serial->write(data);
 
@@ -307,7 +304,7 @@ void MuscleDriverCANInterface::cyclicProcessor()
         string.append("\n");
         QByteArray data2(string.toStdString().c_str());
 
-        qDebug() << "errorCurrent2: " << string << " (" << string.length() << ")";
+        //qDebug() << "errorCurrent2: " << string << " (" << string.length() << ")";
 
         DataProvider::getInstance()->serial->write(data2);
 
@@ -338,7 +335,7 @@ void MuscleDriverCANInterface::cyclicProcessor()
 	//provide data on CAN bus
 
     // TODO: uncomment me !!!!!!!!!!!
-    sendMotorCommands();
+    //sendMotorCommands();
 
 
 

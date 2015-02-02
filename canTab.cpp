@@ -67,17 +67,33 @@ CanTab::CanTab(QWidget *parent) :
     ui->canPlot->yAxis->setTickVector(QVector<double>() << 5 << 55);
     ui->canPlot->yAxis->setTickVectorLabels(QVector<QString>() << "sdg so\nhigh" << "Very\nhigh");*/
     ui->canPlot->yAxis->setRange(-850, 850);    // fixed range of the joint data
+    ui->canPlot->yAxis->setLabel("Joint Angle");
 
-    ui->canPlot->yAxis2->setRange(-10, 500);  // fixed range of the spring displacement data
+    ui->canPlot->yAxis2->setVisible(true);
+    //ui->canPlot->yAxis2->setRange(-10, 500);  // fixed range of the spring displacement data
+    ui->canPlot->yAxis2->setRange(-10, 200);
+    ui->canPlot->yAxis2->setAutoTickCount(10);
+    ui->canPlot->yAxis2->setAutoTickLabels(true);
+    ui->canPlot->yAxis2->setAutoTicks(true);
+    ui->canPlot->yAxis2->setAutoTickStep(true);
+
+    ui->canPlot->yAxis2->setTicks(true);
+    ui->canPlot->yAxis2->setTickLabels(true);
+    //ui->canPlot->yAxis2->setSubTickLength(1, 1);
+    ui->canPlot->yAxis2->setLabel("Motor Current");
+
+    //ui->canPlot->yAxis2->setAutoTicks(true);
+    //ui->canPlot->yAxis2->setAutoTickLabels(true);
+    //ui->canPlot->yAxis2->set
 
     //ui->canPlot->yAxis->setAutoTickStep(false);
-    ui->canPlot->yAxis->setAutoSubTicks(false);
+    //ui->canPlot->yAxis->setAutoSubTicks(false);
     //ui->canPlot->yAxis->setTickStep(1.0);
-    ui->canPlot->yAxis->setSubTickCount(0);
+    //ui->canPlot->yAxis->setSubTickCount(0);
     //ui->canPlot->yAxis2->setAutoTickStep(false);
-    ui->canPlot->yAxis2->setAutoSubTicks(false);
+    //ui->canPlot->yAxis2->setAutoSubTicks(false);
     //ui->canPlot->yAxis2->setTickStep(1.0);
-    ui->canPlot->yAxis2->setSubTickCount(0);
+    //ui->canPlot->yAxis2->setSubTickCount(0);
 
     ui->canPlot->addGraph(ui->canPlot->xAxis, ui->canPlot->yAxis2);
     ui->canPlot->graph(ui->canPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(250, 150, 50)), 5));//setPen(QPen(Qt::blue));
@@ -98,9 +114,16 @@ CanTab::CanTab(QWidget *parent) :
 
     DataProvider::getInstance()->setCanPlot(ui->canPlot);
 
+    // set these values as you wish!
+    this->showPastTime = 1.0;
+    this->windowWidth = 10.5;
+    this->rightBlankTime = 0.5;
+
     // setup a timer that repeatedly calls MainWindow::realtimeDataSlot:
+    this->updateFrequency = this->windowWidth - this->showPastTime - this->rightBlankTime;
+    this->plotStartTime = std::floor(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - this->updateFrequency);
     connect(&dataTimer, SIGNAL(timeout()), this, SLOT(realtimeDataSlot()));
-    dataTimer.start(20); // Interval 0 means to refresh as fast as possible
+    dataTimer.start(50); // Interval 0 means to refresh as fast as possible
 
     /*
     QVector<QCPScatterStyle::ScatterShape> shapes;
@@ -145,10 +168,7 @@ void CanTab::setMainWindow(MainWindow* mainWindow_)
 
 void CanTab::realtimeDataSlot()
 {
-    // calculate two new data points:
-    double key = QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0;
-    static double lastPointKey = 0;
-    if(key-lastPointKey > 0.01) // at most add point every 10 ms
+    if(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - this->plotStartTime > this->updateFrequency)
     {
         /*double value0 = 0;//qSin(key); //sin(key*1.6+cos(key*1.7)*2)*10 + sin(key*1.2+0.56)*20 + 26;
         double value1 = 1;//qCos(key); //sin(key*1.3+cos(key*1.2)*1.2)*7 + sin(key*0.9+0.26)*24 + 26;
@@ -178,8 +198,11 @@ void CanTab::realtimeDataSlot()
         }*/
 
         // remove data of lines that's outside visible range
+
+        this->plotStartTime += this->updateFrequency;
+
         for(int i=0; i<ui->canPlot->graphCount(); i++)
-            ui->canPlot->graph(i)->removeDataBefore(key-10);
+            ui->canPlot->graph(i)->removeDataBefore(this->plotStartTime - this->showPastTime);
 
         // rescale value (vertical) axis to fit the current data
         /*if(ui->canPlot->graphCount() >= 1)
@@ -187,10 +210,9 @@ void CanTab::realtimeDataSlot()
         for(int i=1; i<ui->canPlot->graphCount(); i++)
             ui->canPlot->graph(i)->rescaleValueAxis(true);*/
 
-        lastPointKey = key;
+        ui->canPlot->xAxis->setRange(this->plotStartTime - this->showPastTime, this->windowWidth, Qt::AlignLeft);
     }
-    // make key axis range scroll with the data (at a constant range size of 10):
-    ui->canPlot->xAxis->setRange(key+0.25, 10, Qt::AlignRight);
+
     ui->canPlot->replot();
 
     // calculate frames per second:

@@ -40,6 +40,12 @@ private:
     Ui::CanTab *ui;
     MainWindow *mainWindow;
     QTimer dataTimer;
+
+    double plotStartTime;
+    double updateFrequency;
+    double showPastTime;
+    double windowWidth;
+    double rightBlankTime;
 };
 
 #endif // CanTab_H

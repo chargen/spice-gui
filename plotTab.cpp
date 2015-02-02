@@ -89,9 +89,18 @@ PlotTab::PlotTab(QWidget *parent) :
 
     DataProvider::getInstance()->setupReportWatcher();
 
+    // set these values as you wish!
+    this->approxLoadingTime = 3.5; // how long does the pynn-spinnacker transfer lasts -> time shift in plot
+    this->showPastTime = 1.0;
+    this->windowWidth = 10.5;
+    this->rightBlankTime = 0.5;
+
     // setup a timer that repeatedly calls MainWindow::realtimeDataSlot:
+    this->updateFrequency = this->windowWidth - this->showPastTime - this->rightBlankTime;
+    this->timeLastParsedBefore = DataProvider::getInstance()->getTimeLastParsedInMs();
+    this->plotStartTime = std::floor((QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - this->timeLastParsedBefore/1000.0) - this->updateFrequency - this->approxLoadingTime);
     connect(&dataTimer, SIGNAL(timeout()), this, SLOT(realtimeDataSlot()));
-    dataTimer.start(15); // Interval 0 means to refresh as fast as possible
+    dataTimer.start(50); // Interval 0 means to refresh as fast as possible
 
     /*
     QVector<QCPScatterStyle::ScatterShape> shapes;
@@ -136,6 +145,49 @@ void PlotTab::setMainWindow(MainWindow* mainWindow_)
 
 void PlotTab::realtimeDataSlot()
 {
+    qint64 timeLastParsed = DataProvider::getInstance()->getTimeLastParsedInMs();
+    if(timeLastParsed != this->timeLastParsedBefore)
+    {
+        this->timeLastParsedBefore = timeLastParsed;
+        this->plotStartTime = std::floor((QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - this->timeLastParsedBefore/1000.0) - this->updateFrequency - this->approxLoadingTime);
+    }
+
+    double time = QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - timeLastParsed/1000.0 - this->approxLoadingTime;
+
+    if(time - this->plotStartTime > this->updateFrequency)
+    {
+        this->plotStartTime += this->updateFrequency;
+
+        for(int i=0; i<ui->spikePlot->graphCount(); i++)
+            ui->spikePlot->graph(i)->removeDataBefore(this->plotStartTime - this->showPastTime);
+
+        ui->spikePlot->xAxis->setRange(this->plotStartTime - this->showPastTime, this->windowWidth, Qt::AlignLeft);
+    }
+
+    ui->spikePlot->replot();
+
+    static double lastFpsKey = 0;
+        static int frameCount;
+        ++frameCount;
+        if(time-lastFpsKey > 1) // average fps over x seconds
+        {
+            int dataCount = 0;
+            for(int i=0; i<ui->spikePlot->graphCount(); i++)
+                dataCount += ui->spikePlot->graph(i)->data()->count();
+
+            mainWindow->showMessageStatusBar(
+                QString("%1 FPS, %2 Graphs, Total Data points: %3")
+                .arg(frameCount/(time-lastFpsKey), 0, 'f', 0)
+                .arg(ui->spikePlot->graphCount())
+                .arg(dataCount)
+                , 0);
+            lastFpsKey = time;
+            frameCount = 0;
+        }
+}
+
+void PlotTab::realtimeDataSlotOld()
+{
     double key = QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - DataProvider::getInstance()->getTimeLastParsedInMs()/1000.0 - 2.0;
     static double lastPointKey = 0;
 
@@ -171,7 +223,7 @@ void PlotTab::realtimeDataSlot()
 
         // remove data of lines that's outside visible range
         for(int i=0; i<ui->spikePlot->graphCount(); i++)
-            ui->spikePlot->graph(i)->removeDataBefore(key-10);
+            ui->spikePlot->graph(i)->removeDataBefore(key-8);
 
         // rescale value (vertical) axis to fit the current data
         /*if(ui->spikePlot->graphCount() >= 1)
@@ -181,12 +233,12 @@ void PlotTab::realtimeDataSlot()
 
         lastPointKey = key;
     }
-    // make key axis range scroll with the data (at a constant range size of 10):
-    ui->spikePlot->xAxis->setRange(key+0.25, 10, Qt::AlignRight);
+    // make key axis range scroll with the data (at a constant range size of 8):
+    ui->spikePlot->xAxis->setRange(key+0.25, 8, Qt::AlignRight);
     ui->spikePlot->replot();
 
     // calculate frames per second:
-    static double lastFpsKey = 0;
+    /*static double lastFpsKey = 0;
     static int frameCount;
     ++frameCount;
     if(key-lastFpsKey > 2) // average fps over 2 seconds
@@ -203,7 +255,7 @@ void PlotTab::realtimeDataSlot()
             , 0);
         lastFpsKey = key;
         frameCount = 0;
-    }
+    }*/
 }
 
 void PlotTab::reloadReport()
