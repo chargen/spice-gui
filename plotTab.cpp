@@ -91,7 +91,7 @@ PlotTab::PlotTab(QWidget *parent) :
 
     // set these values as you wish!
     this->approxLoadingTime = 3.5; // how long does the pynn-spinnacker transfer lasts -> time shift in plot
-    this->showPastTime = 1.0;
+    this->showPastTime = 2.0;
     this->windowWidth = 10.5;
     this->rightBlankTime = 0.5;
 

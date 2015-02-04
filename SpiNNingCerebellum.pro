@@ -18,7 +18,8 @@ SOURCES += \
     can/muscleDriverCANInterface.cpp \
     canTab.cpp \
     can/main-old.cpp \
-    dbconnection.cpp
+    dbconnection.cpp \
+    dbspikes.cpp
 
 HEADERS += \
     settingsdialog.h \
@@ -32,7 +33,8 @@ HEADERS += \
     can/KvaserCanInterface.h \
     can/muscleDriverCANInterface.h \
     canTab.h \
-    dbconnection.h
+    dbconnection.h \
+    dbspikes.h
 
 FORMS += \
     settingsdialog.ui \

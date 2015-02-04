@@ -35,6 +35,7 @@ DataProvider::DataProvider(QObject *parent) :
 
     this->canInterface = NULL;
 
+    this->dbSpikes = new DBSpikes(this);
     //this->dbConnection = new DBConnection(this);
     // test code starts!!
 
@@ -284,10 +285,10 @@ bool DataProvider::parseLatestReport()
     this->spikePlot->clearGraphs();
     for(size_t i=0; i<vecVertices.size(); i++)
     {
-        Qt::GlobalColor color = Qt::black;
-        if((i+0)%3 == 0) color = Qt::red;
-        else if((i+1)%3 == 0) color = Qt::blue;
-        else if((i+2)%3 == 0) color = Qt::darkGreen;
+        QColor color = QColor(0, 0, 0, 70);
+        if((i+0)%3 == 0) color = QColor(255, 0, 0, 70);
+        else if((i+1)%3 == 0) color = QColor(0, 0, 255, 70);
+        else if((i+2)%3 == 0) color = QColor(10, 100, 10, 70);
         // TODO: add more colors for the vertices/pops here
 
         size_t graphCountWithDummy = vecVertices.at(i).graphCount;
@@ -298,7 +299,8 @@ bool DataProvider::parseLatestReport()
             this->spikePlot->addGraph();
             this->spikePlot->graph(this->spikePlot->graphCount()-1)->setPen(QPen(color));
             this->spikePlot->graph(this->spikePlot->graphCount()-1)->setLineStyle(QCPGraph::lsNone);
-            this->spikePlot->graph(this->spikePlot->graphCount()-1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssSquare, 3));
+            //this->spikePlot->graph(this->spikePlot->graphCount()-1)->setBrush(QBrush(color));
+            this->spikePlot->graph(this->spikePlot->graphCount()-1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 3));
         }
     }
 
@@ -439,6 +441,9 @@ void DataProvider::readData()
                     double key = scpTime/1000.0*0.6;//QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - this->getTimeLastParsedInMs()/1000.0;
                     uint graphID = subvertex->vertex->graphOffset + dataNeuronID;
                     this->spikePlot->graph(graphID)->addData(key, graphID);
+
+                    // TODO: test performance !!
+                    this->dbSpikes->insertSpike(key, subvertex->vertex->graphOffset, dataNeuronID);
                 }
             }
         }
