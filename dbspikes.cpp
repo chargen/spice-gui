@@ -4,6 +4,8 @@
 DBSpikes::DBSpikes(QObject *parent) :
     QObject(parent)
 {
+    this->active = false;
+
     SettingsDialog::Settings currentSettings = SettingsDialog::getInstance()->settings();
 
     // create a default connection, as we do not pass the second argument
@@ -70,8 +72,16 @@ DBSpikes::~DBSpikes()
 
 void DBSpikes::insertSpike(double time, uint population, uint neuron)
 {
-    insertQuery->bindValue(":time", time);
-    insertQuery->bindValue(":population", population);
-    insertQuery->bindValue(":neuron", neuron);
-    insertQuery->exec();
+    if(this->active)
+    {
+        insertQuery->bindValue(":time", time);
+        insertQuery->bindValue(":population", population);
+        insertQuery->bindValue(":neuron", neuron);
+        insertQuery->exec();
+    }
+}
+
+void DBSpikes::setActive(bool _active)
+{
+    this->active = _active;
 }

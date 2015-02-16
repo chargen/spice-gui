@@ -15,10 +15,12 @@ public:
     ~DBSpikes();
 
     void insertSpike(double time, uint population, uint neuron);
+    void setActive(bool _active);
 
 private:
     QSqlDatabase db;
     QSqlQuery* insertQuery;
+    bool active;
 };
 
 #endif // DBSPIKES_H

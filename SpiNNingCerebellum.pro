@@ -19,7 +19,9 @@ SOURCES += \
     canTab.cpp \
     can/main-old.cpp \
     dbconnection.cpp \
-    dbspikes.cpp
+    dbspikes.cpp \
+    canDataProvider.cpp \
+    controlTab.cpp
 
 HEADERS += \
     settingsdialog.h \
@@ -34,14 +36,17 @@ HEADERS += \
     can/muscleDriverCANInterface.h \
     canTab.h \
     dbconnection.h \
-    dbspikes.h
+    dbspikes.h \
+    canDataProvider.h \
+    controlTab.h
 
 FORMS += \
     settingsdialog.ui \
     mainwindow.ui \
     serialtab.ui \
     plottab.ui \
-    cantab.ui
+    cantab.ui \
+    controltab.ui
 
 RESOURCES += \
     icons.qrc

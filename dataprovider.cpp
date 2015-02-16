@@ -36,6 +36,7 @@ DataProvider::DataProvider(QObject *parent) :
     this->canInterface = NULL;
 
     this->dbSpikes = new DBSpikes(this);
+    this->dbSpikes->setActive(false);
     //this->dbConnection = new DBConnection(this);
     // test code starts!!
 

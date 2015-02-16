@@ -7,6 +7,7 @@
 
 #include "muscleDriverCANInterface.h"
 #include "../dataprovider.h"
+#include "../canDataProvider.h"
 
 #include <stdio.h>
 #include <iostream>
@@ -186,6 +187,8 @@ void MuscleDriverCANInterface::cyclicProcessor()
 	//example: send motor 1 duty cycle to -20%
 	//motorCommand[1].s.dutyCycle=-800.0;
 
+
+    // TODO: don't do this every 10ms ... move to separate thread, e.g. similar to sendData in the Controltab
     if(this->canPlot != NULL)
     {
         // or choose displacement here !!
@@ -195,20 +198,6 @@ void MuscleDriverCANInterface::cyclicProcessor()
     }
 
     //::std::cout << "jointPosition: " << jointData[0].s.jointPosition << "\tspring 1: " << motorTransmitAuxData[0].s.displacement << "\tspring 2: " << motorTransmitAuxData[1].s.displacement << ::std::endl;
-
-    int16_t target_current_2 = 40;
-
-    int16_t error_2 = 0;
-    int16_t curr_min_target_2 = motorTransmitAuxData[1].s.current - target_current_2;
-    if(curr_min_target_2 < 0)
-    {
-        if(curr_min_target_2 < - 100)
-            error_2 = 1000;
-        else
-            error_2 = -10 * curr_min_target_2;
-    }
-
-    ::std::cout << "current 2: " << motorTransmitAuxData[1].s.current << "\t(ist-soll):" << curr_min_target_2 << "\terror 2: " << error_2 << ::std::endl;
 
 
 
@@ -278,64 +267,28 @@ void MuscleDriverCANInterface::cyclicProcessor()
 
 
 
-    // send out error and control commands via serial interface
-    if(DataProvider::getInstance()->serial->isOpen())
-    {
-        QString valueHexString = QString::number(target_current_2, 16);
-        QString string = "@FEFFFE30.00000";
-        for(int i=0; i<3-valueHexString.length(); i++)
-            string.append("0");
-        string += valueHexString;
-        string.append("\n");
-        QByteArray data(string.toStdString().c_str());
-
-        //qDebug() << "setCurrent2: " << string << " (" << string.length() << ")";
-
-        DataProvider::getInstance()->serial->write(data);
-
-        // TODO: needed? but it really hurts here, and slows down everything!!
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-
-        valueHexString = QString::number(error_2, 16);
-        string = "@FEFFFE31.00000";
-        for(int i=0; i<3-valueHexString.length(); i++)
-            string.append("0");
-        string += valueHexString;
-        string.append("\n");
-        QByteArray data2(string.toStdString().c_str());
-
-        //qDebug() << "errorCurrent2: " << string << " (" << string.length() << ")";
-
-        DataProvider::getInstance()->serial->write(data2);
-
-        // TODO: needed? but it really hurts here, and slows down everything!!
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    }
+    // write sensor data to CanDataProvider
+    CanDataProvider::getInstance()->setMotorDataSet1(&motorTransmitData);
+    CanDataProvider::getInstance()->setMotorDataSet2(&motorTransmitAuxData);
+    CanDataProvider::getInstance()->setJointDataSet(&jointData);
 
 
 
 
 	//supply data to CAN interface
-
     motorCommand[0].s.dutyCycle = m_reference1;
-
     motorCommand[1].s.dutyCycle = m_reference2;
 
 
 
 
-	/*
-	 * END OF CYCLIC CONTROL LOOP
-	 */
 
-
-
-
-
-	//provide data on CAN bus
+    // provide data on CAN bus
 
     // TODO: uncomment me !!!!!!!!!!!
     //sendMotorCommands();
+
+
 
 
 
@@ -346,9 +299,6 @@ void MuscleDriverCANInterface::cyclicProcessor()
         ;
         fileOutput<<motorCommand[i].s.dutyCycle<<","<<motorTransmitData[i].s.encoderPosition<<","<<motorTransmitData[i].s.omega<<"," <<motorTransmitAuxData[i].s.displacement<<","<<motorTransmitAuxData[i].s.current<<","<<jointData[i].s.jointPosition<<",";
     }*/
-
-
-
 
 
 

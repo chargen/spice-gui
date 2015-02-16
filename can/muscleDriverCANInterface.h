@@ -115,10 +115,15 @@ private:
     //    void valueChanged(int newValue);
 
 private:
-    motorDataSet1 motorTransmitData[MAX_DRIVERS_AND_JOINTS];
+    std::array<motorDataSet1,MAX_DRIVERS_AND_JOINTS> motorTransmitData;
+    std::array<motorDataSet2,MAX_DRIVERS_AND_JOINTS> motorTransmitAuxData;
+    std::array<jointDataSet,MAX_DRIVERS_AND_JOINTS> jointData;
+    std::array<motorControlCommand,MAX_DRIVERS_AND_JOINTS> motorCommand;
+
+    /*motorDataSet1 motorTransmitData[MAX_DRIVERS_AND_JOINTS];
     motorDataSet2 motorTransmitAuxData[MAX_DRIVERS_AND_JOINTS];
     jointDataSet jointData[MAX_DRIVERS_AND_JOINTS];
-    motorControlCommand motorCommand[MAX_DRIVERS_AND_JOINTS];
+    motorControlCommand motorCommand[MAX_DRIVERS_AND_JOINTS];*/
 
     int newDataArrived;
     int motorDriveOn;

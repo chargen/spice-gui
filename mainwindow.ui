@@ -21,12 +21,17 @@
     <item row="0" column="0">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>2</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
         <string>&amp;1 Control Centre</string>
        </attribute>
+       <layout class="QGridLayout" name="gridLayout_5">
+        <item row="0" column="0">
+         <widget class="ControlTab" name="controlTabWidget" native="true"/>
+        </item>
+       </layout>
       </widget>
       <widget class="QWidget" name="tab_serial">
        <attribute name="title">
@@ -197,6 +202,12 @@
    <class>CanTab</class>
    <extends>QWidget</extends>
    <header>canTab.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ControlTab</class>
+   <extends>QWidget</extends>
+   <header>controlTab.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
