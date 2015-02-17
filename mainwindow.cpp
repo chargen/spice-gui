@@ -15,6 +15,29 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     this->showMaximized();
 
+
+
+    // uncomment me for unripped tabs!!
+    QWidget* rippedOffTab = ui->tabWidget->currentWidget();
+    ui->tabWidget->removeTab(ui->tabWidget->currentIndex());
+    rippedOffTab->setParent(0);
+    rippedOffTab->setWindowFlags(Qt::Window);
+    rippedOffTab->show();
+
+    rippedOffTab = ui->tabWidget->currentWidget();
+    ui->tabWidget->removeTab(ui->tabWidget->currentIndex());
+    rippedOffTab->setParent(0);
+    rippedOffTab->setWindowFlags(Qt::Window);
+    rippedOffTab->show();
+
+    rippedOffTab = ui->tabWidget->currentWidget();
+    ui->tabWidget->removeTab(ui->tabWidget->currentIndex());
+    rippedOffTab->setParent(0);
+    rippedOffTab->setWindowFlags(Qt::Window);
+    rippedOffTab->show();
+
+
+
     ui->serialTabWidget->setMainWindow(this);
     ui->plotTabWidget->setMainWindow(this);
     DataProvider::getInstance()->setMainWindow(this);

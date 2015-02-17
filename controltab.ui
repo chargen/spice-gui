@@ -14,8 +14,41 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="2" column="0">
-    <widget class="QSlider" name="valueManualSlider">
+   <item row="3" column="0">
+    <widget class="QPushButton" name="toggleButton">
+     <property name="text">
+      <string>Toggle Auto/Manual-Mode</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QLineEdit" name="valueEdit">
+     <property name="maximumSize">
+      <size>
+       <width>110</width>
+       <height>16777215</height>
+      </size>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="2">
+    <spacer name="horizontalSpacer">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>40</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="4" column="0" colspan="3">
+    <widget class="QCustomPlot" name="controlPlot" native="true"/>
+   </item>
+   <item row="0" column="0">
+    <widget class="QSlider" name="valueSlider">
      <property name="minimumSize">
       <size>
        <width>200</width>
@@ -53,73 +86,6 @@
       <number>100</number>
      </property>
     </widget>
-   </item>
-   <item row="3" column="0">
-    <widget class="QPushButton" name="setButton">
-     <property name="text">
-      <string>Set Desired Value</string>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="0">
-    <widget class="QSlider" name="valueAutoSlider">
-     <property name="minimumSize">
-      <size>
-       <width>200</width>
-       <height>0</height>
-      </size>
-     </property>
-     <property name="maximumSize">
-      <size>
-       <width>200</width>
-       <height>16777215</height>
-      </size>
-     </property>
-     <property name="minimum">
-      <number>-300</number>
-     </property>
-     <property name="maximum">
-      <number>300</number>
-     </property>
-     <property name="singleStep">
-      <number>100</number>
-     </property>
-     <property name="pageStep">
-      <number>100</number>
-     </property>
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="tickInterval">
-      <number>100</number>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="1">
-    <widget class="QLineEdit" name="valueEdit">
-     <property name="maximumSize">
-      <size>
-       <width>110</width>
-       <height>16777215</height>
-      </size>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="2">
-    <spacer name="horizontalSpacer">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>40</width>
-       <height>20</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="4" column="0" colspan="3">
-    <widget class="QCustomPlot" name="controlPlot" native="true"/>
    </item>
   </layout>
  </widget>

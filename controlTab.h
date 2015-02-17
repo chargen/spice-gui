@@ -31,12 +31,15 @@ private slots:
 
   void sendData();
 
-  void setMotor();
+  void toggleMode();
+  void setValue(int newValue);
 
 private:
     Ui::ControlTab *ui;
     MainWindow *mainWindow;
     QTimer dataTimer;
+
+    bool modeAutoTraj;
 
     double plotStartTime;
     double updateFrequency;

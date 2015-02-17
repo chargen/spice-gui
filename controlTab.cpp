@@ -13,24 +13,11 @@ ControlTab::ControlTab(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    connect(ui->setButton, SIGNAL(clicked()), this, SLOT(setMotor()));
-
-    /*QVector<double> x(101), y(101); // initialize with entries 0..100
-    for (int i=0; i<101; ++i)
-    {
-      x[i] = i/50.0 - 1; // x goes from -1 to 1
-      y[i] = x[i]*x[i]; // let's plot a quadratic function
-    }
-    // create graph and assign data to it:
-    ui->controlPlot->addGraph();
-    ui->controlPlot->graph(0)->setData(x, y);
-    // give the axes some labels:
-    ui->controlPlot->xAxis->setLabel("x");
-    ui->controlPlot->yAxis->setLabel("y");
-    // set axes ranges, so we see all data:
-    ui->controlPlot->xAxis->setRange(-1, 1);
-    ui->controlPlot->yAxis->setRange(0, 1);
-    ui->controlPlot->replot();*/
+    modeAutoTraj = false;
+    this->ui->valueEdit->setText(QString::number(this->ui->valueSlider->value()));
+    this->ui->valueEdit->setDisabled(true);
+    connect(ui->toggleButton, SIGNAL(clicked()), this, SLOT(toggleMode()));
+    connect(ui->valueSlider, SIGNAL(valueChanged(int)), this, SLOT(setValue(int)));
 
     // include this section to fully disable antialiasing for higher performance:
 /*
@@ -62,8 +49,8 @@ ControlTab::ControlTab(QWidget *parent) :
     ui->controlPlot->yAxis->setAutoTickLabels(false);
     ui->controlPlot->yAxis->setTickVector(QVector<double>() << 5 << 55);
     ui->controlPlot->yAxis->setTickVectorLabels(QVector<QString>() << "sdg so\nhigh" << "Very\nhigh");*/
-    ui->controlPlot->yAxis->setRange(-850, 850);    // fixed range of the joint data
-    ui->controlPlot->yAxis->setLabel("Joint Angle");
+    ui->controlPlot->yAxis->setRange(0, 1000);    // fixed range for error value
+    ui->controlPlot->yAxis->setLabel("Error Value");
 
     ui->controlPlot->yAxis2->setVisible(true);
     //ui->controlPlot->yAxis2->setRange(-10, 500);  // fixed range of the spring displacement data
@@ -94,11 +81,11 @@ ControlTab::ControlTab(QWidget *parent) :
     ui->controlPlot->addGraph(ui->controlPlot->xAxis, ui->controlPlot->yAxis2);
     ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(250, 150, 50)), 5));//setPen(QPen(Qt::blue));
 
-    ui->controlPlot->addGraph(ui->controlPlot->xAxis, ui->controlPlot->yAxis2);
-    ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(250, 50, 50)), 5));//setPen(QPen(Qt::blue));
+    //ui->controlPlot->addGraph(ui->controlPlot->xAxis, ui->controlPlot->yAxis2);
+    //ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(250, 50, 50)), 5));//setPen(QPen(Qt::blue));
 
     ui->controlPlot->addGraph(ui->controlPlot->xAxis, ui->controlPlot->yAxis);
-    ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setPen(QPen(QBrush(Qt::blue), 5));//setPen(QPen(Qt::blue));
+    ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setPen(QPen(QBrush(Qt::red), 5));
     //ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setLineStyle(QCPGraph::lsNone);
     //ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 5));
 
@@ -243,12 +230,24 @@ void ControlTab::realtimeDataSlot()
 
 void ControlTab::sendData()
 {
-    //::std::cout << CanDataProvider::getInstance()->getLatestJointDataSet().at(0).s.jointPosition << ::std::endl;
+    //::std::cout << CanDataProvider::getInstance()->getLatestJointDataSet().at(0).s.jointPosition << ::std::endl; 
+
+    int16_t target_current_2 = 0;
+    if(this->modeAutoTraj)
+    {
+        target_current_2 = 25.0*sin(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0) + 25.0;
+        this->ui->valueSlider->setValue(target_current_2);
+    }
+    else
+    {
+        target_current_2 = this->ui->valueSlider->value();
+    }
+
+    int16_t error_2 = 0;
 
     // send out error and control commands via serial interface
     if(DataProvider::getInstance()->canInterface != NULL && DataProvider::getInstance()->serial->isOpen())
     {
-        int16_t target_current_2 = this->ui->valueManualSlider->value();
         if(target_current_2 < 0)
             target_current_2 = 0;
         if(target_current_2 > 60)
@@ -256,7 +255,6 @@ void ControlTab::sendData()
 
         int16_t current_current_2 = CanDataProvider::getInstance()->getLatestMotorDataSet2().at(1).s.current;
 
-        int16_t error_2 = 0;
         int16_t curr_min_target_2 = current_current_2 - target_current_2;
         if(curr_min_target_2 < 0)
         {
@@ -300,10 +298,28 @@ void ControlTab::sendData()
         // TODO: needed? but it really hurts here, and slows down everything!!
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
+
+    this->ui->controlPlot->graph(0)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, target_current_2);
+    this->ui->controlPlot->graph(1)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, error_2);
 }
 
-void ControlTab::setMotor()
+void ControlTab::toggleMode()
 {
+    modeAutoTraj = !modeAutoTraj;
+    if(modeAutoTraj)
+    {
+        this->ui->valueSlider->setDisabled(true);
+    }
+    else
+    {
+        this->ui->valueSlider->setEnabled(true);
+    }
+
     //std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     //DataProvider::getInstance()->canInterface->stop();
+}
+
+void ControlTab::setValue(int newValue)
+{
+    this->ui->valueEdit->setText(QString::number(newValue));
 }
