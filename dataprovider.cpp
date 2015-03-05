@@ -171,8 +171,8 @@ bool DataProvider::parseLatestReport()
         if(popName.endsWith("_PLOT"))
         {
             popName.chop(5);
-            if(regVertexInfo.cap(3).toUInt() > 32)
-                maxGraphsPerVertex = 32;
+            if(regVertexInfo.cap(3).toUInt() > 128)
+                maxGraphsPerVertex = 128;
             else
                 maxGraphsPerVertex = regVertexInfo.cap(3).toUInt();
         }
@@ -443,8 +443,8 @@ void DataProvider::readData()
                     uint graphID = subvertex->vertex->graphOffset + dataNeuronID;
                     this->spikePlot->graph(graphID)->addData(key, graphID);
 
-                    // TODO: test performance !!
-                    this->dbSpikes->insertSpike(key, subvertex->vertex->graphOffset, dataNeuronID);
+                    // TODO: make configurable!! test performance !!
+                    //this->dbSpikes->insertSpike(key, subvertex->vertex->graphOffset, dataNeuronID);
                 }
             }
         }

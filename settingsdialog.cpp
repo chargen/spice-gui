@@ -48,7 +48,7 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
         user = qgetenv("USERNAME");
     //ui->spynnakerCfgEdit->setText("/home/"+user+"/.spynnaker.cfg");
     //TODO: change it if you want to use the new/old SpiNNaker package release
-    ui->spynnakerCfgEdit->setText("/home/sjentzsch/HBP/SpiNNaker/old/spinnaker_package_jun14");
+    ui->spynnakerCfgEdit->setText("/home/richtech/tools/spinnaker_package_jun14");
 
     updateSettings();
 }
@@ -148,7 +148,7 @@ void SettingsDialog::fillPortsInfo()
         QStringList list;
         description = info.description();
         manufacturer = info.manufacturer();
-        serialNumber = info.serialNumber();
+        serialNumber = 1; //info.serialNumber();
         list << info.portName()
              << (!description.isEmpty() ? description : blankString)
              << (!manufacturer.isEmpty() ? manufacturer : blankString)

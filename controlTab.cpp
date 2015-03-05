@@ -54,7 +54,7 @@ ControlTab::ControlTab(QWidget *parent) :
 
     ui->controlPlot->yAxis2->setVisible(true);
     //ui->controlPlot->yAxis2->setRange(-10, 500);  // fixed range of the spring displacement data
-    ui->controlPlot->yAxis2->setRange(-10, 200);
+    ui->controlPlot->yAxis2->setRange(-800, 800);
     ui->controlPlot->yAxis2->setAutoTickCount(10);
     ui->controlPlot->yAxis2->setAutoTickLabels(true);
     ui->controlPlot->yAxis2->setAutoTicks(true);
@@ -63,7 +63,7 @@ ControlTab::ControlTab(QWidget *parent) :
     ui->controlPlot->yAxis2->setTicks(true);
     ui->controlPlot->yAxis2->setTickLabels(true);
     //ui->controlPlot->yAxis2->setSubTickLength(1, 1);
-    ui->controlPlot->yAxis2->setLabel("Motor Current");
+    ui->controlPlot->yAxis2->setLabel("Angle");
 
     //ui->controlPlot->yAxis2->setAutoTicks(true);
     //ui->controlPlot->yAxis2->setAutoTickLabels(true);
@@ -235,7 +235,7 @@ void ControlTab::sendData()
     int16_t target_current_2 = 0;
     if(this->modeAutoTraj)
     {
-        target_current_2 = 25.0*sin(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0) + 25.0;
+        target_current_2 = 150.0*sin(QDateTime::currentDateTime().toMSecsSinceEpoch()/10000.0) - 650.0;
         this->ui->valueSlider->setValue(target_current_2);
     }
     else
@@ -248,27 +248,28 @@ void ControlTab::sendData()
     // send out error and control commands via serial interface
     if(DataProvider::getInstance()->canInterface != NULL && DataProvider::getInstance()->serial->isOpen())
     {
-        if(target_current_2 < 0)
-            target_current_2 = 0;
-        if(target_current_2 > 60)
-            target_current_2 = 60;
+        if(target_current_2 < -800)
+            target_current_2 = -800;
+        if(target_current_2 > 800)
+            target_current_2 = 800;
 
-        int16_t current_current_2 = CanDataProvider::getInstance()->getLatestMotorDataSet2().at(1).s.current;
+//        int16_t current_current_2 = CanDataProvider::getInstance()->getLatestMotorDataSet2().at(0).s.displacement;
+        int16_t current_current_2 = CanDataProvider::getInstance()->getLatestJointDataSet().at(0).s.jointPosition;
 
         int16_t curr_min_target_2 = current_current_2 - target_current_2;
         if(curr_min_target_2 < 0)
         {
-            if(curr_min_target_2 < - 100)
-                error_2 = 1000;
+            if(curr_min_target_2 < - 500)
+                error_2 = 500;
             else
-                error_2 = -10 * curr_min_target_2;
+                error_2 = - 2 * curr_min_target_2; //curr_min_target_2 *1000/(500*500);
         }
 
-        ::std::cout << "target 2: " << target_current_2 << "\tcurrent 2: " << current_current_2 << "\t(ist-soll):" << curr_min_target_2 << "\terror 2: " << error_2 << ::std::endl;
+        ::std::cout << "target 2: " << target_current_2 << "\tcurrent 2: " << current_current_2 << "\tdelta:" << curr_min_target_2 << "\terror 2: " << error_2 << ::std::endl;
 
 
 
-        QString valueHexString = QString::number(target_current_2, 16);
+        QString valueHexString = QString::number(target_current_2 + 800, 16);
         QString string = "@FEFFFE30.00000";
         for(int i=0; i<3-valueHexString.length(); i++)
             string.append("0");

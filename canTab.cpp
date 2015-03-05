@@ -71,7 +71,7 @@ CanTab::CanTab(QWidget *parent) :
 
     ui->canPlot->yAxis2->setVisible(true);
     //ui->canPlot->yAxis2->setRange(-10, 500);  // fixed range of the spring displacement data
-    ui->canPlot->yAxis2->setRange(-10, 200);
+    ui->canPlot->yAxis2->setRange(-10, 1000);
     ui->canPlot->yAxis2->setAutoTickCount(10);
     ui->canPlot->yAxis2->setAutoTickLabels(true);
     ui->canPlot->yAxis2->setAutoTicks(true);
@@ -80,7 +80,7 @@ CanTab::CanTab(QWidget *parent) :
     ui->canPlot->yAxis2->setTicks(true);
     ui->canPlot->yAxis2->setTickLabels(true);
     //ui->canPlot->yAxis2->setSubTickLength(1, 1);
-    ui->canPlot->yAxis2->setLabel("Motor Current");
+    ui->canPlot->yAxis2->setLabel("Motor Current/Spring Displ");
 
     //ui->canPlot->yAxis2->setAutoTicks(true);
     //ui->canPlot->yAxis2->setAutoTickLabels(true);

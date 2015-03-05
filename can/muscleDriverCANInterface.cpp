@@ -193,7 +193,7 @@ void MuscleDriverCANInterface::cyclicProcessor()
     {
         // or choose displacement here !!
         this->canPlot->graph(0)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, motorTransmitAuxData[0].s.current);
-        this->canPlot->graph(1)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, motorTransmitAuxData[1].s.current);
+        this->canPlot->graph(1)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, motorTransmitAuxData[0].s.displacement);
         this->canPlot->graph(2)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, jointData[0].s.jointPosition);
     }
 
