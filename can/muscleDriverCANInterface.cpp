@@ -465,7 +465,7 @@ int MuscleDriverCANInterface::readInit()
 	  //realistically, we only drive 2 motors and 1 joint in a 1ms loop on CAN
 	  //so, we only implement those now
 
-	 QSettings settings( "settings.ini", QSettings::IniFormat );
+	 QSettings settings( "../spice-gui/settings.ini", QSettings::IniFormat );
 
 	 motorTXID[0] = settings.value("nodes/MotorTxID0", -1).toUInt();
 	 motorTXID[1] = settings.value("nodes/MotorTxID1", -1).toUInt();
