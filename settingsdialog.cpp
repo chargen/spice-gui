@@ -46,9 +46,16 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
     QString user = qgetenv("USER");
     if(user.isEmpty())
         user = qgetenv("USERNAME");
+
     //ui->spynnakerCfgEdit->setText("/home/"+user+"/.spynnaker.cfg");
     //TODO: change it if you want to use the new/old SpiNNaker package release
-    ui->spynnakerCfgEdit->setText("/home/richtech/tools/spinnaker_package_jun14");
+    //ui->spynnakerCfgEdit->setText("/home/richtech/tools/spinnaker_package_jun14");
+    //ui->spynnakerCfgEdit->setText("/home/sjentzsch/HBP/SpiNNaker/old/spinnaker_package_jun14");
+
+    QString spinn_dirs = qgetenv("SPINN_DIRS");
+    if(spinn_dirs.isEmpty())
+        spinn_dirs = "/home/sjentzsch/HBP/SpiNNaker/workspace/spice-spinnaker-package";
+    ui->spynnakerCfgEdit->setText(spinn_dirs);
 
     updateSettings();
 }

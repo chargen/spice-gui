@@ -90,7 +90,7 @@ PlotTab::PlotTab(QWidget *parent) :
     DataProvider::getInstance()->setupReportWatcher();
 
     // set these values as you wish!
-    this->approxLoadingTime = 3.5 + 3.5; // how long does the pynn-spinnacker transfer lasts -> time shift in plot // additional 3.5 for wifi !!
+    this->approxLoadingTime = 3.5 + 0.5; // how long does the pynn-spinnacker transfer lasts -> time shift in plot // for wifi: 3.5 + 3.5
     this->showPastTime = 2.0;
     this->windowWidth = 10.5;
     this->rightBlankTime = 0.5;
