@@ -49,7 +49,7 @@ ControlTab::ControlTab(QWidget *parent) :
     ui->controlPlot->yAxis->setAutoTickLabels(false);
     ui->controlPlot->yAxis->setTickVector(QVector<double>() << 5 << 55);
     ui->controlPlot->yAxis->setTickVectorLabels(QVector<QString>() << "sdg so\nhigh" << "Very\nhigh");*/
-    ui->controlPlot->yAxis->setRange(0, 1000);    // fixed range for error value
+    ui->controlPlot->yAxis->setRange(0, 500);    // fixed range for error value
     ui->controlPlot->yAxis->setLabel("Error Value");
 
     ui->controlPlot->yAxis2->setVisible(true);
@@ -81,11 +81,16 @@ ControlTab::ControlTab(QWidget *parent) :
     ui->controlPlot->addGraph(ui->controlPlot->xAxis, ui->controlPlot->yAxis2);
     ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(250, 150, 50)), 5));//setPen(QPen(Qt::blue));
 
+    ui->controlPlot->addGraph(ui->controlPlot->xAxis, ui->controlPlot->yAxis2);
+    ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(250, 250, 50)), 5));//setPen(QPen(Qt::blue));
+
     //ui->controlPlot->addGraph(ui->controlPlot->xAxis, ui->controlPlot->yAxis2);
     //ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(250, 50, 50)), 5));//setPen(QPen(Qt::blue));
 
     ui->controlPlot->addGraph(ui->controlPlot->xAxis, ui->controlPlot->yAxis);
     ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setPen(QPen(QBrush(Qt::red), 5));
+    ui->controlPlot->addGraph(ui->controlPlot->xAxis, ui->controlPlot->yAxis);
+    ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(200, 50, 50)), 5));
     //ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setLineStyle(QCPGraph::lsNone);
     //ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 5));
 
@@ -232,44 +237,53 @@ void ControlTab::sendData()
 {
     //::std::cout << CanDataProvider::getInstance()->getLatestJointDataSet().at(0).s.jointPosition << ::std::endl; 
 
-    int16_t target_current_2 = 0;
+    int16_t target_angle = 0;
+    int16_t current_angle = CanDataProvider::getInstance()->getLatestJointDataSet().at(0).s.jointPosition;
+
     if(this->modeAutoTraj)
     {
-        target_current_2 = 150.0*sin(QDateTime::currentDateTime().toMSecsSinceEpoch()/10000.0) - 650.0;
-        this->ui->valueSlider->setValue(target_current_2);
+        target_angle = 800.0*sin(QDateTime::currentDateTime().toMSecsSinceEpoch()/10000.0);
+        this->ui->valueSlider->setValue(target_angle);
     }
     else
     {
-        target_current_2 = this->ui->valueSlider->value();
+        target_angle = this->ui->valueSlider->value();
     }
 
-    int16_t error_2 = 0;
+    int16_t error_left = 0;
+    int16_t error_right = 0;
 
     // send out error and control commands via serial interface
     if(DataProvider::getInstance()->canInterface != NULL && DataProvider::getInstance()->serial->isOpen())
     {
-        if(target_current_2 < -800)
-            target_current_2 = -800;
-        if(target_current_2 > 800)
-            target_current_2 = 800;
+        if(target_angle < -800)
+            target_angle = -800;
+        if(target_angle > 800)
+            target_angle = 800;
 
-//        int16_t current_current_2 = CanDataProvider::getInstance()->getLatestMotorDataSet2().at(0).s.displacement;
-        int16_t current_current_2 = CanDataProvider::getInstance()->getLatestJointDataSet().at(0).s.jointPosition;
-
-        int16_t curr_min_target_2 = current_current_2 - target_current_2;
-        if(curr_min_target_2 < 0)
+        int16_t curr_min_target_left = target_angle - current_angle;
+        if(curr_min_target_left < 0)
         {
-            if(curr_min_target_2 < - 500)
-                error_2 = 500;
+            if(curr_min_target_left < - 500)
+                error_left = 500;
             else
-                error_2 = - 2 * curr_min_target_2; //curr_min_target_2 *1000/(500*500);
+                error_left = -curr_min_target_left; //curr_min_target_2 *1000/(500*500);
         }
 
-        ::std::cout << "target 2: " << target_current_2 << "\tcurrent 2: " << current_current_2 << "\tdelta:" << curr_min_target_2 << "\terror 2: " << error_2 << ::std::endl;
+        int16_t curr_min_target_right = current_angle - target_angle;
+        if(curr_min_target_right < 0)
+        {
+            if(curr_min_target_right < - 500)
+                error_right = 500;
+            else
+                error_right = -curr_min_target_right; //curr_min_target_2 *1000/(500*500);
+        }
+
+        ::std::cout << "target: " << target_angle << "\tcurrent: " << current_angle << "\terror left:" << error_left << "\terror right: " << error_right << ::std::endl;
 
 
 
-        QString valueHexString = QString::number(target_current_2 + 800, 16);
+        QString valueHexString = QString::number(target_angle + 800, 16);
         QString string = "@FEFFFE30.00000";
         for(int i=0; i<3-valueHexString.length(); i++)
             string.append("0");
@@ -284,7 +298,7 @@ void ControlTab::sendData()
         // TODO: needed? but it really hurts here, and slows down everything!!
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
-        valueHexString = QString::number(error_2, 16);
+        valueHexString = QString::number(error_right, 16);
         string = "@FEFFFE31.00000";
         for(int i=0; i<3-valueHexString.length(); i++)
             string.append("0");
@@ -298,10 +312,27 @@ void ControlTab::sendData()
 
         // TODO: needed? but it really hurts here, and slows down everything!!
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+        valueHexString = QString::number(error_left, 16);
+        string = "@FEFFFE32.00000";
+        for(int i=0; i<3-valueHexString.length(); i++)
+            string.append("0");
+        string += valueHexString;
+        string.append("\n");
+        QByteArray data3(string.toStdString().c_str());
+
+        //qDebug() << "errorCurrent2: " << string << " (" << string.length() << ")";
+
+        DataProvider::getInstance()->serial->write(data3);
+
+        // TODO: needed? but it really hurts here, and slows down everything!!
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
-    this->ui->controlPlot->graph(0)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, target_current_2);
-    this->ui->controlPlot->graph(1)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, error_2);
+    this->ui->controlPlot->graph(0)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, target_angle);
+    this->ui->controlPlot->graph(1)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, current_angle);
+    this->ui->controlPlot->graph(2)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, error_left);
+    this->ui->controlPlot->graph(3)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, error_right);
 }
 
 void ControlTab::toggleMode()
