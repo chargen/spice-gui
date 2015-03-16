@@ -17,6 +17,7 @@
 #include <QMap>
 #include <QFile>
 #include <QElapsedTimer>
+#include <array>
 
 #include "KvaserCanInterface.h"
 #include "../qcustomplot.h"
