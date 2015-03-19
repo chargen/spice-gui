@@ -17,10 +17,13 @@ public:
     std::array<motorDataSet1,MAX_DRIVERS_AND_JOINTS> getLatestMotorDataSet1();
     std::array<motorDataSet2,MAX_DRIVERS_AND_JOINTS> getLatestMotorDataSet2();
     std::array<jointDataSet,MAX_DRIVERS_AND_JOINTS> getLatestJointDataSet();
+    unsigned long getLatestMotorDataSet1TimeMicroSec();
+    unsigned long getLatestMotorDataSet2TimeMicroSec();
+    unsigned long getLatestJointDataSetTimeMicroSec();
 
-    void setMotorDataSet1(std::array<motorDataSet1,MAX_DRIVERS_AND_JOINTS>* newMotorDataSet1);
-    void setMotorDataSet2(std::array<motorDataSet2,MAX_DRIVERS_AND_JOINTS>* newMotorDataSet2);
-    void setJointDataSet(std::array<jointDataSet,MAX_DRIVERS_AND_JOINTS>* newJointDataSet);
+    void setMotorDataSet1(std::array<motorDataSet1,MAX_DRIVERS_AND_JOINTS>* newMotorDataSet1, unsigned long newMotorDataSet1TimeMicroSec);
+    void setMotorDataSet2(std::array<motorDataSet2,MAX_DRIVERS_AND_JOINTS>* newMotorDataSet2, unsigned long newMotorDataSet2TimeMicroSec);
+    void setJointDataSet(std::array<jointDataSet,MAX_DRIVERS_AND_JOINTS>* newJointDataSet, unsigned long newJointDataSetTimeMicroSec);
 
 private:
     static CanDataProvider* canDataProvider;
@@ -29,12 +32,15 @@ private:
 
     QMutex mutexMotorDataSet1;
     std::array<motorDataSet1,MAX_DRIVERS_AND_JOINTS> latestMotorDataSet1;
+    unsigned long latestMotorDataSet1TimeMicroSec;
 
     QMutex mutexMotorDataSet2;
     std::array<motorDataSet2,MAX_DRIVERS_AND_JOINTS> latestMotorDataSet2;
+    unsigned long latestMotorDataSet2TimeMicroSec;
 
     QMutex mutexJointDataSet;
     std::array<jointDataSet,MAX_DRIVERS_AND_JOINTS> latestJointDataSet;
+    unsigned long latestJointDataSetTimeMicroSec;
 };
 
 #endif // CANDATAPROVIDER_H

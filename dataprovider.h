@@ -14,7 +14,7 @@
 
 #include "can/muscleDriverCANInterface.h"
 #include "dbconnection.h"
-#include "dbspikes.h"
+#include "dbdata.h"
 
 class MainWindow;
 
@@ -119,7 +119,7 @@ private:
     QFileSystemWatcher* watcher;
 
     DBConnection* dbConnection;
-    DBSpikes* dbSpikes;
+    DBData* dbData;
 
     QMutex mutex;
     float dutyCycle[MAX_DRIVERS_AND_JOINTS];

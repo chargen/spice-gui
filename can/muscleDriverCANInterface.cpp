@@ -268,9 +268,9 @@ void MuscleDriverCANInterface::cyclicProcessor()
 
 
     // write sensor data to CanDataProvider
-    CanDataProvider::getInstance()->setMotorDataSet1(&motorTransmitData);
-    CanDataProvider::getInstance()->setMotorDataSet2(&motorTransmitAuxData);
-    CanDataProvider::getInstance()->setJointDataSet(&jointData);
+    CanDataProvider::getInstance()->setMotorDataSet1(&motorTransmitData, accutime);
+    CanDataProvider::getInstance()->setMotorDataSet2(&motorTransmitAuxData, accutime);
+    CanDataProvider::getInstance()->setJointDataSet(&jointData, accutime);
 
 
 

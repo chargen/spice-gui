@@ -38,20 +38,41 @@ std::array<jointDataSet,MAX_DRIVERS_AND_JOINTS> CanDataProvider::getLatestJointD
     return this->latestJointDataSet;
 }
 
-void CanDataProvider::setMotorDataSet1(std::array<motorDataSet1,MAX_DRIVERS_AND_JOINTS>* newMotorDataSet1)
+unsigned long CanDataProvider::getLatestMotorDataSet1TimeMicroSec()
+{
+    QMutexLocker locker(&mutexMotorDataSet1);
+    return this->latestMotorDataSet1TimeMicroSec;
+}
+
+unsigned long CanDataProvider::getLatestMotorDataSet2TimeMicroSec()
+{
+    QMutexLocker locker(&mutexMotorDataSet2);
+    return this->latestMotorDataSet2TimeMicroSec;
+}
+
+unsigned long CanDataProvider::getLatestJointDataSetTimeMicroSec()
+{
+    QMutexLocker locker(&mutexJointDataSet);
+    return this->latestJointDataSetTimeMicroSec;
+}
+
+void CanDataProvider::setMotorDataSet1(std::array<motorDataSet1,MAX_DRIVERS_AND_JOINTS>* newMotorDataSet1, unsigned long newMotorDataSet1TimeMicroSec)
 {
     QMutexLocker locker(&mutexMotorDataSet1);
     this->latestMotorDataSet1 = *newMotorDataSet1;
+    this->latestMotorDataSet1TimeMicroSec = newMotorDataSet1TimeMicroSec;
 }
 
-void CanDataProvider::setMotorDataSet2(std::array<motorDataSet2,MAX_DRIVERS_AND_JOINTS>* newMotorDataSet2)
+void CanDataProvider::setMotorDataSet2(std::array<motorDataSet2,MAX_DRIVERS_AND_JOINTS>* newMotorDataSet2, unsigned long newMotorDataSet2TimeMicroSec)
 {
     QMutexLocker locker(&mutexMotorDataSet2);
     this->latestMotorDataSet2 = *newMotorDataSet2;
+    this->latestMotorDataSet2TimeMicroSec = newMotorDataSet2TimeMicroSec;
 }
 
-void CanDataProvider::setJointDataSet(std::array<jointDataSet,MAX_DRIVERS_AND_JOINTS>* newJointDataSet)
+void CanDataProvider::setJointDataSet(std::array<jointDataSet,MAX_DRIVERS_AND_JOINTS>* newJointDataSet, unsigned long newJointDataSetTimeMicroSec)
 {
     QMutexLocker locker(&mutexJointDataSet);
     this->latestJointDataSet = *newJointDataSet;
+    this->latestJointDataSetTimeMicroSec = newJointDataSetTimeMicroSec;
 }

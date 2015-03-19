@@ -4,6 +4,8 @@
 #include <QWidget>
 #include <QTimer>
 
+#include <type_traits>
+
 QT_USE_NAMESPACE
 
 QT_BEGIN_NAMESPACE
@@ -46,6 +48,14 @@ private:
     double showPastTime;
     double windowWidth;
     double rightBlankTime;
+
+    int processDataInterval;
+    double prev_can_time_angle;
+    double prev_error;
+    double integral;
+    double Kp;
+    double Ki;
+    double Kd;
 };
 
 #endif // CONTROLTAB_H

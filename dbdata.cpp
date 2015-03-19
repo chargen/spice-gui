@@ -1,18 +1,19 @@
-#include "dbspikes.h"
+#include "dbdata.h"
 #include "settingsdialog.h"
 
-DBSpikes::DBSpikes(QObject *parent) :
+DBData::DBData(QObject *parent) :
     QObject(parent)
 {
-    this->active = false;
+    this->spikeRecord = false;
+    this->controlRecord = false;
 
     SettingsDialog::Settings currentSettings = SettingsDialog::getInstance()->settings();
 
     // create a default connection, as we do not pass the second argument
     db = QSqlDatabase::addDatabase("QSQLITE");
-    db.setDatabaseName(currentSettings.spynnakerCfgPath+"/spikes_latest.db");
+    db.setDatabaseName(currentSettings.spynnakerCfgPath+"/data_latest.db");
 
-    // TODO: check if this database even exists ... we do NOT want to create one (this would be the defauls SQLite behavior)
+    // TODO: check if this database even exists ... we do NOT want to create one (this would be the default SQLite behavior)
 
     if(db.open())
     {
@@ -37,10 +38,10 @@ DBSpikes::DBSpikes(QObject *parent) :
             ::std::cout << "MY-DB STUFF2 WORKED!" << ::std::endl;
         }
 
-        insertQuery = new QSqlQuery();
+        insertQuerySpike = new QSqlQuery();
 
-        insertQuery->prepare("INSERT INTO `spikes` (time, population, neuron) "
-                            "VALUES (:time, :population, :neuron)");
+        insertQuerySpike->prepare("INSERT INTO `spikes` (time, population, neuron) "
+                                    "VALUES (:time, :population, :neuron)");
 
         //this->insertSpike(3.56, 4, 2);
         //this->insertSpike(8.89, 0, 3);
@@ -63,25 +64,30 @@ DBSpikes::DBSpikes(QObject *parent) :
     }
 }
 
-DBSpikes::~DBSpikes()
+DBData::~DBData()
 {
     // close and remove the default database connection
     QSqlDatabase::database().close();
     QSqlDatabase::database().removeDatabase(QSqlDatabase::database().connectionName());
 }
 
-void DBSpikes::insertSpike(double time, uint population, uint neuron)
+void DBData::insertSpike(double time, uint population, uint neuron)
 {
-    if(this->active)
+    if(this->spikeRecord)
     {
-        insertQuery->bindValue(":time", time);
-        insertQuery->bindValue(":population", population);
-        insertQuery->bindValue(":neuron", neuron);
-        insertQuery->exec();
+        insertQuerySpike->bindValue(":time", time);
+        insertQuerySpike->bindValue(":population", population);
+        insertQuerySpike->bindValue(":neuron", neuron);
+        insertQuerySpike->exec();
     }
 }
 
-void DBSpikes::setActive(bool _active)
+void DBData::setSpikeRecord(bool _active)
 {
-    this->active = _active;
+    this->spikeRecord = _active;
+}
+
+void DBData::setControlRecord(bool _active)
+{
+    this->controlRecord = _active;
 }

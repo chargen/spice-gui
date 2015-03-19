@@ -107,6 +107,16 @@ ControlTab::ControlTab(QWidget *parent) :
     this->windowWidth = 10.5;
     this->rightBlankTime = 0.5;
 
+    // interval to process data, calculate errors and send data via serial connection to SpiNNaker
+    this->processDataInterval = 50;
+
+    this->prev_error = 0;
+    this->integral = 0;
+    // set these gains appropriately!
+    this->Kp = 1.0;
+    this->Ki = 0.0;
+    this->Kd = 1.0;
+
     // setup a timer that repeatedly calls MainWindow::realtimeDataSlot:
     this->updateFrequency = this->windowWidth - this->showPastTime - this->rightBlankTime;
     this->plotStartTime = std::floor(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - this->updateFrequency);
@@ -118,7 +128,7 @@ ControlTab::ControlTab(QWidget *parent) :
     // setup the timer to send data to SpiNNaker via serial port
     QTimer *timerDataSend = new QTimer(this);
     connect(timerDataSend, SIGNAL(timeout()), this, SLOT(sendData()));
-    timerDataSend->start(50);
+    timerDataSend->start(this->processDataInterval);
 
 
 
@@ -239,6 +249,7 @@ void ControlTab::sendData()
 
     int16_t target_angle = 0;
     int16_t current_angle = CanDataProvider::getInstance()->getLatestJointDataSet().at(0).s.jointPosition;
+    double curr_can_time_angle = CanDataProvider::getInstance()->getLatestJointDataSetTimeMicroSec();
 
     if(this->modeAutoTraj)
     {
@@ -250,38 +261,67 @@ void ControlTab::sendData()
         target_angle = this->ui->valueSlider->value();
     }
 
-    int16_t error_left = 0;
-    int16_t error_right = 0;
+    int max_error = 500;
+    int16_t left_error_final = 0;
+    int16_t right_error_final = 0;
 
     // send out error and control commands via serial interface
     if(DataProvider::getInstance()->canInterface != NULL && DataProvider::getInstance()->serial->isOpen())
     {
+        // limit target angle (setpoint) to appropriate limits
         if(target_angle < -800)
             target_angle = -800;
         if(target_angle > 800)
             target_angle = 800;
 
-        int16_t curr_min_target_left = target_angle - current_angle;
+        // calculate error for overall system following PID-approach
+        double error = target_angle - current_angle;
+        double dt = ((curr_can_time_angle-this->prev_can_time_angle)/1000000);
+        this->integral += error*dt;
+        if(this->Ki*this->integral > max_error)
+            this->integral = max_error / this->Ki;
+        else if(this->Ki*this->integral < -max_error)
+            this->integral = -max_error / this->Ki;
+
+        double derivative = (error - this->prev_error)/dt;
+        int error_final = (int)(this->Kp*error + this->Ki*this->integral + this->Kd*derivative);
+        this->prev_error = error;
+        this->prev_can_time_angle = curr_can_time_angle;
+
+        if(error_final < 0)
+        {
+            right_error_final = 0;
+            left_error_final = std::min(max_error, -error_final);
+        }
+        else
+        {
+            left_error_final = 0;
+            right_error_final = std::min(max_error, error_final);
+        }
+
+        /*int16_t curr_min_target_left = target_angle - current_angle;
         if(curr_min_target_left < 0)
         {
             if(curr_min_target_left < - 500)
-                error_left = 500;
+                left_error_final = 500;
             else
-                error_left = -curr_min_target_left; //curr_min_target_2 *1000/(500*500);
+                left_error_final = -curr_min_target_left; //curr_min_target_2 *1000/(500*500);
         }
 
         int16_t curr_min_target_right = current_angle - target_angle;
         if(curr_min_target_right < 0)
         {
             if(curr_min_target_right < - 500)
-                error_right = 500;
+                right_error_final = 500;
             else
-                error_right = -curr_min_target_right; //curr_min_target_2 *1000/(500*500);
-        }
+                right_error_final = -curr_min_target_right; //curr_min_target_2 *1000/(500*500);
+        }*/
 
-        ::std::cout << "target: " << target_angle << "\tcurrent: " << current_angle << "\terror left:" << error_left << "\terror right: " << error_right << ::std::endl;
+        ::std::cout << "target: " << target_angle << "\tcurrent: " << current_angle << "\terror left:" << left_error_final << "\terror right: " << right_error_final << ::std::endl;
 
 
+
+        // Send out via serial connection: target angle (or setpoint), error for right muscle, error for left muscle
 
         QString valueHexString = QString::number(target_angle + 800, 16);
         QString string = "@FEFFFE30.00000";
@@ -298,7 +338,7 @@ void ControlTab::sendData()
         // TODO: needed? but it really hurts here, and slows down everything!!
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
-        valueHexString = QString::number(error_right, 16);
+        valueHexString = QString::number(right_error_final, 16);
         string = "@FEFFFE31.00000";
         for(int i=0; i<3-valueHexString.length(); i++)
             string.append("0");
@@ -313,7 +353,7 @@ void ControlTab::sendData()
         // TODO: needed? but it really hurts here, and slows down everything!!
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
-        valueHexString = QString::number(error_left, 16);
+        valueHexString = QString::number(left_error_final, 16);
         string = "@FEFFFE32.00000";
         for(int i=0; i<3-valueHexString.length(); i++)
             string.append("0");
@@ -331,8 +371,8 @@ void ControlTab::sendData()
 
     this->ui->controlPlot->graph(0)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, target_angle);
     this->ui->controlPlot->graph(1)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, current_angle);
-    this->ui->controlPlot->graph(2)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, error_left);
-    this->ui->controlPlot->graph(3)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, error_right);
+    this->ui->controlPlot->graph(2)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, left_error_final);
+    this->ui->controlPlot->graph(3)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, right_error_final);
 }
 
 void ControlTab::toggleMode()

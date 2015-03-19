@@ -19,9 +19,9 @@ SOURCES += \
     canTab.cpp \
     can/main-old.cpp \
     dbconnection.cpp \
-    dbspikes.cpp \
     canDataProvider.cpp \
-    controlTab.cpp
+    controlTab.cpp \
+    dbdata.cpp
 
 HEADERS += \
     settingsdialog.h \
@@ -36,9 +36,9 @@ HEADERS += \
     can/muscleDriverCANInterface.h \
     canTab.h \
     dbconnection.h \
-    dbspikes.h \
     canDataProvider.h \
-    controlTab.h
+    controlTab.h \
+    dbdata.h
 
 FORMS += \
     settingsdialog.ui \

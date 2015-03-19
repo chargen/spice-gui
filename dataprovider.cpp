@@ -35,8 +35,9 @@ DataProvider::DataProvider(QObject *parent) :
 
     this->canInterface = NULL;
 
-    this->dbSpikes = new DBSpikes(this);
-    this->dbSpikes->setActive(false);
+    this->dbData = new DBData(this);
+    this->dbData->setSpikeRecord(false);
+    this->dbData->setControlRecord(true);
     //this->dbConnection = new DBConnection(this);
     // test code starts!!
 
@@ -443,8 +444,8 @@ void DataProvider::readData()
                     uint graphID = subvertex->vertex->graphOffset + dataNeuronID;
                     this->spikePlot->graph(graphID)->addData(key, graphID);
 
-                    // TODO: make configurable!! test performance !!
-                    //this->dbSpikes->insertSpike(key, subvertex->vertex->graphOffset, dataNeuronID);
+                    // TODO: test performance !! how to avoid repetatively calls when active is false?
+                    this->dbData->insertSpike(key, subvertex->vertex->graphOffset, dataNeuronID);
                 }
             }
         }

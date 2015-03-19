@@ -13,7 +13,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    this->showMaximized();
+    //this->showMaximized();
+    this->setGeometry(QRect(800, 100, 600, 300));
 
 
 
@@ -22,18 +23,21 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->tabWidget->removeTab(ui->tabWidget->currentIndex());
     rippedOffTab->setParent(0);
     rippedOffTab->setWindowFlags(Qt::Window);
+    rippedOffTab->setGeometry(QRect(100, 100, 600, 300));
     rippedOffTab->show();
 
     rippedOffTab = ui->tabWidget->currentWidget();
     ui->tabWidget->removeTab(ui->tabWidget->currentIndex());
     rippedOffTab->setParent(0);
     rippedOffTab->setWindowFlags(Qt::Window);
+    rippedOffTab->setGeometry(QRect(100, 500, 600, 300));
     rippedOffTab->show();
 
     rippedOffTab = ui->tabWidget->currentWidget();
     ui->tabWidget->removeTab(ui->tabWidget->currentIndex());
     rippedOffTab->setParent(0);
     rippedOffTab->setWindowFlags(Qt::Window);
+    rippedOffTab->setGeometry(QRect(800, 500, 600, 300));
     rippedOffTab->show();
 
 
