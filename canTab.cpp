@@ -101,6 +101,12 @@ CanTab::CanTab(QWidget *parent) :
     ui->canPlot->addGraph(ui->canPlot->xAxis, ui->canPlot->yAxis2);
     ui->canPlot->graph(ui->canPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(250, 50, 50)), 5));//setPen(QPen(Qt::blue));
 
+    ui->canPlot->addGraph(ui->canPlot->xAxis, ui->canPlot->yAxis2);
+    ui->canPlot->graph(ui->canPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(200, 100, 10)), 5));//setPen(QPen(Qt::blue));
+
+    ui->canPlot->addGraph(ui->canPlot->xAxis, ui->canPlot->yAxis2);
+    ui->canPlot->graph(ui->canPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(200, 10, 10)), 5));//setPen(QPen(Qt::blue));
+
     ui->canPlot->addGraph(ui->canPlot->xAxis, ui->canPlot->yAxis);
     ui->canPlot->graph(ui->canPlot->graphCount()-1)->setPen(QPen(QBrush(Qt::blue), 5));//setPen(QPen(Qt::blue));
     //ui->canPlot->graph(ui->canPlot->graphCount()-1)->setLineStyle(QCPGraph::lsNone);

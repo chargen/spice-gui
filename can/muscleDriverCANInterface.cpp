@@ -194,7 +194,9 @@ void MuscleDriverCANInterface::cyclicProcessor()
         // or choose displacement here !!
         this->canPlot->graph(0)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, motorTransmitAuxData[0].s.current);
         this->canPlot->graph(1)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, motorTransmitAuxData[0].s.displacement);
-        this->canPlot->graph(2)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, jointData[0].s.jointPosition);
+        this->canPlot->graph(2)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, motorTransmitAuxData[1].s.current);
+        this->canPlot->graph(3)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, motorTransmitAuxData[1].s.displacement);
+        this->canPlot->graph(4)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, jointData[0].s.jointPosition);
     }
 
     //::std::cout << "jointPosition: " << jointData[0].s.jointPosition << "\tspring 1: " << motorTransmitAuxData[0].s.displacement << "\tspring 2: " << motorTransmitAuxData[1].s.displacement << ::std::endl;
@@ -204,7 +206,7 @@ void MuscleDriverCANInterface::cyclicProcessor()
 	//simple antagonist joint position control,
 	//this code should/could be put in a separate method:
 
-	// a few variable for simple control example
+    // a few variables for simple control example
 
 
 

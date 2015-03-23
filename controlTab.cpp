@@ -78,19 +78,19 @@ ControlTab::ControlTab(QWidget *parent) :
     //ui->controlPlot->yAxis2->setTickStep(1.0);
     //ui->controlPlot->yAxis2->setSubTickCount(0);
 
-    ui->controlPlot->addGraph(ui->controlPlot->xAxis, ui->controlPlot->yAxis2);
-    ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(250, 150, 50)), 5));//setPen(QPen(Qt::blue));
+    ui->controlPlot->addGraph(ui->controlPlot->xAxis, ui->controlPlot->yAxis);
+    ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setPen(QPen(QBrush(Qt::red), 5));//setPen(QPen(Qt::blue));
 
-    ui->controlPlot->addGraph(ui->controlPlot->xAxis, ui->controlPlot->yAxis2);
-    ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(250, 250, 50)), 5));//setPen(QPen(Qt::blue));
+    ui->controlPlot->addGraph(ui->controlPlot->xAxis, ui->controlPlot->yAxis);
+    ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(200, 50, 50)), 5));//setPen(QPen(Qt::blue));
 
     //ui->controlPlot->addGraph(ui->controlPlot->xAxis, ui->controlPlot->yAxis2);
     //ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(250, 50, 50)), 5));//setPen(QPen(Qt::blue));
 
-    ui->controlPlot->addGraph(ui->controlPlot->xAxis, ui->controlPlot->yAxis);
-    ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setPen(QPen(QBrush(Qt::red), 5));
-    ui->controlPlot->addGraph(ui->controlPlot->xAxis, ui->controlPlot->yAxis);
-    ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(200, 50, 50)), 5));
+    ui->controlPlot->addGraph(ui->controlPlot->xAxis, ui->controlPlot->yAxis2);
+    ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(250, 150, 50)), 5));
+    ui->controlPlot->addGraph(ui->controlPlot->xAxis, ui->controlPlot->yAxis2);
+    ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setPen(QPen(QBrush(Qt::blue), 5));
     //ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setLineStyle(QCPGraph::lsNone);
     //ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 5));
 
@@ -317,7 +317,7 @@ void ControlTab::sendData()
                 right_error_final = -curr_min_target_right; //curr_min_target_2 *1000/(500*500);
         }*/
 
-        ::std::cout << "target: " << target_angle << "\tcurrent: " << current_angle << "\terror left:" << left_error_final << "\terror right: " << right_error_final << ::std::endl;
+        //::std::cout << "target: " << target_angle << "\tcurrent: " << current_angle << "\terror left:" << left_error_final << "\terror right: " << right_error_final << ::std::endl;
 
 
 
@@ -367,12 +367,37 @@ void ControlTab::sendData()
 
         // TODO: needed? but it really hurts here, and slows down everything!!
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    }
 
-    this->ui->controlPlot->graph(0)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, target_angle);
-    this->ui->controlPlot->graph(1)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, current_angle);
-    this->ui->controlPlot->graph(2)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, left_error_final);
-    this->ui->controlPlot->graph(3)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, right_error_final);
+        valueHexString = QString::number(left_error_final, 16);
+        string = "@FEFFFE40.00000";
+        for(int i=0; i<3-valueHexString.length(); i++)
+            string.append("0");
+        string += valueHexString;
+        string.append("\n");
+        QByteArray data4(string.toStdString().c_str());
+
+        DataProvider::getInstance()->serial->write(data4);
+
+        // TODO: needed? but it really hurts here, and slows down everything!!
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+        valueHexString = QString::number(right_error_final, 16);
+        string = "@FEFFFE41.00000";
+        for(int i=0; i<3-valueHexString.length(); i++)
+            string.append("0");
+        string += valueHexString;
+        string.append("\n");
+        QByteArray data5(string.toStdString().c_str());
+
+        DataProvider::getInstance()->serial->write(data5);
+
+        // TODO: needed? but it really hurts here, and slows down everything!!
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    this->ui->controlPlot->graph(0)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, left_error_final);
+    this->ui->controlPlot->graph(1)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, right_error_final);
+    this->ui->controlPlot->graph(2)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, target_angle);
+    this->ui->controlPlot->graph(3)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, current_angle);
 }
 
 void ControlTab::toggleMode()

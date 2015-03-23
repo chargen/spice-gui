@@ -97,6 +97,7 @@ private slots:
     void handleError(QSerialPort::SerialPortError error);
     void openSerialPort();
     void closeSerialPort();
+    void calcSpikeRates();
 
 private:
     static DataProvider* dataProvider;

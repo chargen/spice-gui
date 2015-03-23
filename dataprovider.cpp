@@ -47,6 +47,11 @@ DataProvider::DataProvider(QObject *parent) :
 
     connect(udpSocket, SIGNAL(readyRead()), this, SLOT(readData()));
     connect(udpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(displayError(QAbstractSocket::SocketError)));
+
+    // setup a timer to calculate and display the current spike rates
+    QTimer *timerSpikeRate = new QTimer(this);
+    connect(timerSpikeRate, SIGNAL(timeout()), this, SLOT(calcSpikeRates()));
+    timerSpikeRate->start(100);
 }
 
 DataProvider::~DataProvider()
@@ -549,5 +554,47 @@ void DataProvider::stopCan()
         // TODO fixme, crashes always :)
         delete canInterface;
         canInterface = NULL;
+    }
+}
+
+void DataProvider::calcSpikeRates()
+{
+    double max_t = 0;
+    for(unsigned int i=0; i<vecVertices.size(); i++)
+    {
+        if(vecVertices.at(i).graphCount <= 0)
+            continue;
+
+        uint graphID = vecVertices.at(i).graphOffset;
+        for(unsigned int u=0; u<vecVertices.at(i).graphCount; u++)
+        {
+            if(!this->spikePlot->graph(graphID+u)->data()->empty())
+            {
+                double local_max_t = (--this->spikePlot->graph(graphID+u)->data()->end()).key();
+                if(local_max_t > max_t)
+                    max_t = local_max_t;
+            }
+        }
+    }
+
+    for(unsigned int i=0; i<vecVertices.size(); i++)
+    {
+        if(vecVertices.at(i).graphCount <= 0)
+            continue;
+
+        uint graphID = vecVertices.at(i).graphOffset;
+
+        int count = 0;
+        for(unsigned int u=0; u<vecVertices.at(i).graphCount; u++)
+        {
+            if(!this->spikePlot->graph(graphID+u)->data()->empty())
+            {
+                count += std::distance(this->spikePlot->graph(graphID+u)->data()->upperBound(max_t-1.0), this->spikePlot->graph(graphID+u)->data()->lowerBound(max_t));
+            }
+        }
+
+        ::std::cout << vecVertices.at(i).name << " | " << vecVertices.at(i).model << " | " << max_t <<  ": " <<  count << ::std::endl;
+
+       // this->spikePlot->se
     }
 }
