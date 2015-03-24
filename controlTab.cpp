@@ -113,9 +113,9 @@ ControlTab::ControlTab(QWidget *parent) :
     this->prev_error = 0;
     this->integral = 0;
     // set these gains appropriately!
-    this->Kp = 1.0;
+    this->Kp = 3.0; // 1.0
     this->Ki = 0.0;
-    this->Kd = 1.0;
+    this->Kd = 1.5; // 1.0
 
     // setup a timer that repeatedly calls MainWindow::realtimeDataSlot:
     this->updateFrequency = this->windowWidth - this->showPastTime - this->rightBlankTime;
@@ -253,7 +253,7 @@ void ControlTab::sendData()
 
     if(this->modeAutoTraj)
     {
-        target_angle = 800.0*sin(QDateTime::currentDateTime().toMSecsSinceEpoch()/10000.0);
+        target_angle = 800.0*sin(0.2*QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0);
         this->ui->valueSlider->setValue(target_angle);
     }
     else
