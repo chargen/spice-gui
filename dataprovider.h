@@ -75,10 +75,12 @@ public:
 
     void setupReportWatcher();
 
+    void setupAppRunningWatcher();
+
     void setSpikePlot(QCustomPlot *spikePlot_);
     void setCanPlot(QCustomPlot *canPlot_);
 
-    qint64 getTimeLastParsedInMs() {return this->timeLastParsedInMs;}
+    qint64 getTimeSpiNNakerStartInMs() {return this->timeSpiNNakerStartInMs;}
 
     QSerialPort* serial;
 
@@ -93,6 +95,7 @@ public slots:
 private slots:
     void readData();
     void reportChanged(const QString& path);
+    void appRunning(const QString& path);
     void displayError(QAbstractSocket::SocketError socketError);
     void handleError(QSerialPort::SerialPortError error);
     void openSerialPort();
@@ -112,12 +115,13 @@ private:
     std::map< std::tuple< size_t, size_t, size_t >, SubvertexInfo > mapPopByCoord;
     std::string reportID;
     std::vector< VertexInfo > vecVertices;
-    qint64 timeLastParsedInMs;
+    qint64 timeSpiNNakerStartInMs;
 
     QCustomPlot *spikePlot;
     QCustomPlot *canPlot;
 
     QFileSystemWatcher* watcher;
+    QFileSystemWatcher* watcher2;
 
     DBConnection* dbConnection;
     DBData* dbData;

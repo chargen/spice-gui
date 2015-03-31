@@ -48,6 +48,7 @@ private:
     double showPastTime;
     double windowWidth;
     double rightBlankTime;
+    qint64 timeSpiNNakerStartBefore;
 
     int processDataInterval;
     double prev_can_time_angle;

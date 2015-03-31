@@ -28,7 +28,6 @@ public:
 
 private slots:
   void realtimeDataSlot();
-  void realtimeDataSlotOld();
   void reloadReport();
   void savePlot();
   void setMotors();
@@ -38,13 +37,12 @@ private:
     MainWindow *mainWindow;
     QTimer dataTimer;
 
-    double approxLoadingTime;
     double plotStartTime;
     double updateFrequency;
     double showPastTime;
     double windowWidth;
     double rightBlankTime;
-    qint64 timeLastParsedBefore;
+    qint64 timeSpiNNakerStartBefore;
 };
 
 #endif // PLOTTAB_H

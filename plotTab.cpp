@@ -67,7 +67,7 @@ PlotTab::PlotTab(QWidget *parent) :
     ui->spikePlot->yAxis->setAutoTicks(false);
     ui->spikePlot->yAxis->setAutoTickLabels(false);
     ui->spikePlot->yAxis->setTickVector(QVector<double>() << 5 << 55);
-    ui->spikePlot->yAxis->setTickVectorLabels(QVector<QString>() << "sdg so\nhigh" << "Very\nhigh");
+    ui->spikePlot->yAxis->setTickVectorLabels(QVector<QString>() << "not so\nhigh" << "Very\nhigh");
     ui->spikePlot->yAxis2->setAutoTicks(false);
     ui->spikePlot->yAxis2->setTickVector(QVector<double>() << 5 << 55);
     ui->spikePlot->yAxis->setRange(0, 60);
@@ -88,17 +88,17 @@ PlotTab::PlotTab(QWidget *parent) :
     DataProvider::getInstance()->setSpikePlot(ui->spikePlot);
 
     DataProvider::getInstance()->setupReportWatcher();
+    DataProvider::getInstance()->setupAppRunningWatcher();
 
     // set these values as you wish!
-    this->approxLoadingTime = 3.5 + 0.5; // how long does the pynn-spinnacker transfer lasts -> time shift in plot // for wifi: 3.5 + 3.5
     this->showPastTime = 2.0;
     this->windowWidth = 10.5;
     this->rightBlankTime = 0.5;
 
     // setup a timer that repeatedly calls MainWindow::realtimeDataSlot:
     this->updateFrequency = this->windowWidth - this->showPastTime - this->rightBlankTime;
-    this->timeLastParsedBefore = DataProvider::getInstance()->getTimeLastParsedInMs();
-    this->plotStartTime = std::floor((QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - this->timeLastParsedBefore/1000.0) - this->updateFrequency - this->approxLoadingTime);
+    this->timeSpiNNakerStartBefore = DataProvider::getInstance()->getTimeSpiNNakerStartInMs();
+    this->plotStartTime = std::floor((QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - this->timeSpiNNakerStartBefore/1000.0) - this->updateFrequency);
     connect(&dataTimer, SIGNAL(timeout()), this, SLOT(realtimeDataSlot()));
     dataTimer.start(50); // Interval 0 means to refresh as fast as possible
 
@@ -145,14 +145,17 @@ void PlotTab::setMainWindow(MainWindow* mainWindow_)
 
 void PlotTab::realtimeDataSlot()
 {
-    qint64 timeLastParsed = DataProvider::getInstance()->getTimeLastParsedInMs();
-    if(timeLastParsed != this->timeLastParsedBefore)
+    qint64 timeSpiNNakerStart = DataProvider::getInstance()->getTimeSpiNNakerStartInMs();
+
+    if(timeSpiNNakerStart != this->timeSpiNNakerStartBefore)
     {
-        this->timeLastParsedBefore = timeLastParsed;
-        this->plotStartTime = std::floor((QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - this->timeLastParsedBefore/1000.0) - this->updateFrequency - this->approxLoadingTime);
+        this->timeSpiNNakerStartBefore = timeSpiNNakerStart;
+        this->plotStartTime = std::floor((QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - this->timeSpiNNakerStartBefore/1000.0) - this->updateFrequency);
+        for(int i=0; i<ui->spikePlot->graphCount(); i++)
+            ui->spikePlot->graph(i)->clearData();
     }
 
-    double time = QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - timeLastParsed/1000.0 - this->approxLoadingTime;
+    double time = QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - timeSpiNNakerStart/1000.0;
 
     if(time - this->plotStartTime > this->updateFrequency)
     {
@@ -186,78 +189,6 @@ void PlotTab::realtimeDataSlot()
         }
 }
 
-void PlotTab::realtimeDataSlotOld()
-{
-    double key = QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - DataProvider::getInstance()->getTimeLastParsedInMs()/1000.0 - 2.0;
-    static double lastPointKey = 0;
-
-    // remove old data points every x s
-    if(key-lastPointKey > 0.1)
-    {
-        /*double value0 = 0;//qSin(key); //sin(key*1.6+cos(key*1.7)*2)*10 + sin(key*1.2+0.56)*20 + 26;
-        double value1 = 1;//qCos(key); //sin(key*1.3+cos(key*1.2)*1.2)*7 + sin(key*0.9+0.26)*24 + 26;
-        double value2 = 2;
-
-        bool spike0 = rand()%100 < 5;
-        bool spike1 = rand()%100 < 3;
-        bool spike2 = rand()%100 < 1;*/
-
-        // add data to lines:
-        /*if(spike0)
-            ui->spikePlot->graph(0)->addData(key, value0);
-        if(spike1)
-            ui->spikePlot->graph(1)->addData(key, value1);
-        if(spike2)
-            ui->spikePlot->graph(2)->addData(key, value2);*/
-        // set data of dots:
-        /*if(spike0)
-        {
-            ui->spikePlot->graph(2)->clearData();
-            ui->spikePlot->graph(2)->addData(key, value0);
-        }
-        if(spike1)
-        {
-            ui->spikePlot->graph(3)->clearData();
-            ui->spikePlot->graph(3)->addData(key, value1);
-        }*/
-
-        // remove data of lines that's outside visible range
-        for(int i=0; i<ui->spikePlot->graphCount(); i++)
-            ui->spikePlot->graph(i)->removeDataBefore(key-8);
-
-        // rescale value (vertical) axis to fit the current data
-        /*if(ui->spikePlot->graphCount() >= 1)
-            ui->spikePlot->graph(0)->rescaleValueAxis();
-        for(int i=1; i<ui->spikePlot->graphCount(); i++)
-            ui->spikePlot->graph(i)->rescaleValueAxis(true);*/
-
-        lastPointKey = key;
-    }
-    // make key axis range scroll with the data (at a constant range size of 8):
-    ui->spikePlot->xAxis->setRange(key+0.25, 8, Qt::AlignRight);
-    ui->spikePlot->replot();
-
-    // calculate frames per second:
-    /*static double lastFpsKey = 0;
-    static int frameCount;
-    ++frameCount;
-    if(key-lastFpsKey > 2) // average fps over 2 seconds
-    {
-        int dataCount = 0;
-        for(int i=0; i<ui->spikePlot->graphCount(); i++)
-            dataCount += ui->spikePlot->graph(i)->data()->count();
-
-        mainWindow->showMessageStatusBar(
-            QString("%1 FPS, %2 Graphs, Total Data points: %3")
-            .arg(frameCount/(key-lastFpsKey), 0, 'f', 0)
-            .arg(ui->spikePlot->graphCount())
-            .arg(dataCount)
-            , 0);
-        lastFpsKey = key;
-        frameCount = 0;
-    }*/
-}
-
 void PlotTab::reloadReport()
 {
     qDebug() << "Reload latest report ...";
@@ -266,11 +197,13 @@ void PlotTab::reloadReport()
 
 void PlotTab::savePlot()
 {
-    // NOT working correctly currently -> qcustomplot 1.3 will make it work! wait for it!
-    //ui->spikePlot->savePdf("testPlotPdf2.pdf", false, 600, 1900);
+    QString filename = "spikePlot";
+
+    ui->spikePlot->savePdf(filename+".pdf", false);
+    //ui->spikePlot->savePdf(filename+"noCosmetics.pdf", true);  // better for editing in Inkscape?
 
     //ui->spikePlot->setAntialiasedElements(QCP::aeAll);
-    ui->spikePlot->savePng("plot.png", 0, 0, 2.0, 100);
+    ui->spikePlot->savePng(filename+".png", 0, 0, 2.0, 100);
 }
 
 void PlotTab::setMotors()

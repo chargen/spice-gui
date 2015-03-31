@@ -27,9 +27,10 @@ DataProvider::DataProvider(QObject *parent) :
     this->spikePlot = NULL;
     this->canPlot = NULL;
 
-    this->timeLastParsedInMs = 0;
+    this->timeSpiNNakerStartInMs = 0;
 
     this->watcher = NULL;
+    this->watcher2 = NULL;
 
     serial = new QSerialPort(this);
 
@@ -59,6 +60,7 @@ DataProvider::~DataProvider()
     delete this->host;
     delete this->udpSocket;
     delete this->watcher;
+    delete this->watcher2;
     delete this->dbConnection;
 }
 
@@ -285,8 +287,8 @@ bool DataProvider::parseLatestReport()
         }
     }
 
-    // set timeLastParsedInMs
-    this->timeLastParsedInMs = QDateTime::currentDateTime().toMSecsSinceEpoch();
+    // set timeLastParsedInMs _> is now done in appRunning()
+    //this->timeLastParsedInMs = QDateTime::currentDateTime().toMSecsSinceEpoch();
 
     // prepare the graphs
     this->spikePlot->clearGraphs();
@@ -383,6 +385,18 @@ void DataProvider::setupReportWatcher()
         qDebug() << "Error: parse latest report was *not* successfully completed.";
 }
 
+void DataProvider::setupAppRunningWatcher()
+{
+    // TODO: REMOVE ME!!! SHOULD NOT BE NEEDED ANYMORE SOON!!
+
+    watcher2 = new QFileSystemWatcher(this);
+    watcher2->addPath(SettingsDialog::getInstance()->settings().spynnakerCfgPath+"/reports/latest/app_running");
+    connect(watcher2, SIGNAL(directoryChanged(const QString&)), this, SLOT(appRunning(const QString&)));
+    connect(watcher2, SIGNAL(fileChanged(const QString&)), this, SLOT(appRunning(const QString&)));
+
+    qDebug() << "setupAppRunningWatcher";
+}
+
 void DataProvider::reportChanged(const QString& path)
 {
     // files might not be ready yet, resp. do not exist yet (see Qt bug below)
@@ -396,6 +410,29 @@ void DataProvider::reportChanged(const QString& path)
     while(!checkFile.exists())
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     watcher->addPath(path);
+}
+
+void DataProvider::appRunning(const QString& path)
+{
+    // files might not be ready yet, resp. do not exist yet (see Qt bug below)
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+    // process data!
+    QFile f(path);
+    while(!f.open(QFile::ReadOnly | QFile::Text))
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    QTextStream in(&f);
+    QString line = in.readLine();
+    // note: the time contained in the file (= SecsSinceEpoch) was written ~5msec before, I measured it once ...
+    this->timeSpiNNakerStartInMs = (qint64)(line.toDouble() * 1000.0);
+    ::std::cout << "SpiNNaker started -> set timeSpiNNakerStartInMs to " << this->timeSpiNNakerStartInMs << ::std::endl;
+    f.close();
+
+    // workaround for Qt bug: http://stackoverflow.com/questions/18300376/qt-qfilesystemwatcher-singal-filechanged-gets-emited-only-once
+    QFileInfo checkFile(path);
+    while(!checkFile.exists())
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    watcher2->addPath(path);
 }
 
 void DataProvider::readData()
@@ -593,7 +630,8 @@ void DataProvider::calcSpikeRates()
             }
         }
 
-        ::std::cout << vecVertices.at(i).name << " | " << vecVertices.at(i).model << " | " << max_t <<  ": " <<  count << ::std::endl;
+        // TODO: uncomment me
+        //::std::cout << vecVertices.at(i).name << " | " << vecVertices.at(i).model << " | " << max_t <<  ": " <<  count << ::std::endl;
 
        // this->spikePlot->se
     }

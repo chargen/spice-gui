@@ -39,7 +39,7 @@ ControlTab::ControlTab(QWidget *parent) :
     ui->controlPlot->graph(3)->setScatterStyle(QCPScatterStyle::ssDisc);*/
 
     ui->controlPlot->xAxis->setTickLabelType(QCPAxis::ltDateTime);
-    ui->controlPlot->xAxis->setDateTimeFormat("hh:mm:ss");
+    ui->controlPlot->xAxis->setDateTimeFormat("mm:ss");
     ui->controlPlot->xAxis->setAutoTickStep(false);
     ui->controlPlot->xAxis->setTickStep(1);
     ui->controlPlot->axisRect()->setupFullAxesBox();
@@ -115,11 +115,12 @@ ControlTab::ControlTab(QWidget *parent) :
     // set these gains appropriately!
     this->Kp = 3.0; // 1.0
     this->Ki = 0.0;
-    this->Kd = 1.5; // 1.0
+    this->Kd = 2.0; // 1.0
 
     // setup a timer that repeatedly calls MainWindow::realtimeDataSlot:
     this->updateFrequency = this->windowWidth - this->showPastTime - this->rightBlankTime;
-    this->plotStartTime = std::floor(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - this->updateFrequency);
+    this->timeSpiNNakerStartBefore = DataProvider::getInstance()->getTimeSpiNNakerStartInMs();
+    this->plotStartTime = std::floor((QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - this->timeSpiNNakerStartBefore/1000.0) - this->updateFrequency);
     connect(&dataTimer, SIGNAL(timeout()), this, SLOT(realtimeDataSlot()));
     dataTimer.start(50); // Interval 0 means to refresh as fast as possible
 
@@ -175,7 +176,19 @@ void ControlTab::setMainWindow(MainWindow* mainWindow_)
 
 void ControlTab::realtimeDataSlot()
 {
-    if(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - this->plotStartTime > this->updateFrequency)
+    qint64 timeSpiNNakerStart = DataProvider::getInstance()->getTimeSpiNNakerStartInMs();
+
+    if(timeSpiNNakerStart != this->timeSpiNNakerStartBefore)
+    {
+        this->timeSpiNNakerStartBefore = timeSpiNNakerStart;
+        this->plotStartTime = std::floor((QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - this->timeSpiNNakerStartBefore/1000.0) - this->updateFrequency);
+        for(int i=0; i<ui->controlPlot->graphCount(); i++)
+            ui->controlPlot->graph(i)->clearData();
+    }
+
+    double time = QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - timeSpiNNakerStart/1000.0;
+
+    if(time - this->plotStartTime > this->updateFrequency)
     {
         /*double value0 = 0;//qSin(key); //sin(key*1.6+cos(key*1.7)*2)*10 + sin(key*1.2+0.56)*20 + 26;
         double value1 = 1;//qCos(key); //sin(key*1.3+cos(key*1.2)*1.2)*7 + sin(key*0.9+0.26)*24 + 26;
@@ -394,10 +407,11 @@ void ControlTab::sendData()
         // TODO: needed? but it really hurts here, and slows down everything!!
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
-    this->ui->controlPlot->graph(0)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, left_error_final);
-    this->ui->controlPlot->graph(1)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, right_error_final);
-    this->ui->controlPlot->graph(2)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, target_angle);
-    this->ui->controlPlot->graph(3)->addData(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0, current_angle);
+    double keyPlot = (QDateTime::currentDateTime().toMSecsSinceEpoch() - DataProvider::getInstance()->getTimeSpiNNakerStartInMs())/1000.0;
+    this->ui->controlPlot->graph(0)->addData(keyPlot, left_error_final);
+    this->ui->controlPlot->graph(1)->addData(keyPlot, right_error_final);
+    this->ui->controlPlot->graph(2)->addData(keyPlot, target_angle);
+    this->ui->controlPlot->graph(3)->addData(keyPlot, current_angle);
 }
 
 void ControlTab::toggleMode()

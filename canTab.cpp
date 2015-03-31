@@ -56,7 +56,7 @@ CanTab::CanTab(QWidget *parent) :
     ui->canPlot->graph(3)->setScatterStyle(QCPScatterStyle::ssDisc);*/
 
     ui->canPlot->xAxis->setTickLabelType(QCPAxis::ltDateTime);
-    ui->canPlot->xAxis->setDateTimeFormat("hh:mm:ss");
+    ui->canPlot->xAxis->setDateTimeFormat("mm:ss");
     ui->canPlot->xAxis->setAutoTickStep(false);
     ui->canPlot->xAxis->setTickStep(1);
     ui->canPlot->axisRect()->setupFullAxesBox();
@@ -80,7 +80,7 @@ CanTab::CanTab(QWidget *parent) :
     ui->canPlot->yAxis2->setTicks(true);
     ui->canPlot->yAxis2->setTickLabels(true);
     //ui->canPlot->yAxis2->setSubTickLength(1, 1);
-    ui->canPlot->yAxis2->setLabel("Motor Current/Spring Displ");
+    ui->canPlot->yAxis2->setLabel("Motor Current/Spring Displ/PWM");
 
     //ui->canPlot->yAxis2->setAutoTicks(true);
     //ui->canPlot->yAxis2->setAutoTickLabels(true);
@@ -112,6 +112,14 @@ CanTab::CanTab(QWidget *parent) :
     //ui->canPlot->graph(ui->canPlot->graphCount()-1)->setLineStyle(QCPGraph::lsNone);
     //ui->canPlot->graph(ui->canPlot->graphCount()-1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 5));
 
+    // PWM control right motor
+    ui->canPlot->addGraph(ui->canPlot->xAxis, ui->canPlot->yAxis2);
+    ui->canPlot->graph(ui->canPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(10, 100, 10)), 5));//setPen(QPen(Qt::blue));
+
+    // PWM control left motor
+    ui->canPlot->addGraph(ui->canPlot->xAxis, ui->canPlot->yAxis2);
+    ui->canPlot->graph(ui->canPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(30, 150, 30)), 5));//setPen(QPen(Qt::blue));
+
     ui->canPlot->replot(); // needed?
 
     // make left and bottom axes transfer their ranges to right and top axes:
@@ -127,7 +135,8 @@ CanTab::CanTab(QWidget *parent) :
 
     // setup a timer that repeatedly calls MainWindow::realtimeDataSlot:
     this->updateFrequency = this->windowWidth - this->showPastTime - this->rightBlankTime;
-    this->plotStartTime = std::floor(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - this->updateFrequency);
+    this->timeSpiNNakerStartBefore = DataProvider::getInstance()->getTimeSpiNNakerStartInMs();
+    this->plotStartTime = std::floor((QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - this->timeSpiNNakerStartBefore/1000.0) - this->updateFrequency);
     connect(&dataTimer, SIGNAL(timeout()), this, SLOT(realtimeDataSlot()));
     dataTimer.start(50); // Interval 0 means to refresh as fast as possible
 
@@ -174,7 +183,19 @@ void CanTab::setMainWindow(MainWindow* mainWindow_)
 
 void CanTab::realtimeDataSlot()
 {
-    if(QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - this->plotStartTime > this->updateFrequency)
+    qint64 timeSpiNNakerStart = DataProvider::getInstance()->getTimeSpiNNakerStartInMs();
+
+    if(timeSpiNNakerStart != this->timeSpiNNakerStartBefore)
+    {
+        this->timeSpiNNakerStartBefore = timeSpiNNakerStart;
+        this->plotStartTime = std::floor((QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - this->timeSpiNNakerStartBefore/1000.0) - this->updateFrequency);
+        for(int i=0; i<ui->canPlot->graphCount(); i++)
+            ui->canPlot->graph(i)->clearData();
+    }
+
+    double time = QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - timeSpiNNakerStart/1000.0;
+
+    if(time - this->plotStartTime > this->updateFrequency)
     {
         /*double value0 = 0;//qSin(key); //sin(key*1.6+cos(key*1.7)*2)*10 + sin(key*1.2+0.56)*20 + 26;
         double value1 = 1;//qCos(key); //sin(key*1.3+cos(key*1.2)*1.2)*7 + sin(key*0.9+0.26)*24 + 26;

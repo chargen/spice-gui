@@ -46,6 +46,7 @@ private:
     double showPastTime;
     double windowWidth;
     double rightBlankTime;
+    qint64 timeSpiNNakerStartBefore;
 };
 
 #endif // CanTab_H
