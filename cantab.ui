@@ -14,6 +14,22 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <item row="3" column="0" colspan="8">
+    <widget class="QCustomPlot" name="canPlot" native="true"/>
+   </item>
+   <item row="1" column="6">
+    <spacer name="horizontalSpacer">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>40</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
    <item row="1" column="4">
     <widget class="QSlider" name="motor2Slider">
      <property name="minimumSize">
@@ -52,7 +68,7 @@
     </widget>
    </item>
    <item row="0" column="6">
-    <spacer name="horizontalSpacer">
+    <spacer name="horizontalSpacer_3">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
@@ -64,30 +80,10 @@
      </property>
     </spacer>
    </item>
-   <item row="0" column="0">
-    <widget class="QPushButton" name="startCANButton">
+   <item row="1" column="3">
+    <widget class="QPushButton" name="reset1Button">
      <property name="text">
-      <string>Start CAN</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="6">
-    <spacer name="horizontalSpacer_2">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>40</width>
-       <height>20</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="0" column="1">
-    <widget class="QPushButton" name="stopCANButton">
-     <property name="text">
-      <string>Stop CAN</string>
+      <string>Reset</string>
      </property>
     </widget>
    </item>
@@ -125,17 +121,28 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="3">
-    <widget class="QPushButton" name="reset1Button">
+   <item row="0" column="1">
+    <widget class="QPushButton" name="stopCANButton">
      <property name="text">
-      <string>Reset</string>
+      <string>Stop CAN</string>
      </property>
     </widget>
    </item>
-   <item row="3" column="0" colspan="7">
-    <widget class="QCustomPlot" name="canPlot" native="true"/>
+   <item row="0" column="0">
+    <widget class="QPushButton" name="startCANButton">
+     <property name="text">
+      <string>Start CAN</string>
+     </property>
+    </widget>
    </item>
-   <item row="2" column="0">
+   <item row="0" column="5">
+    <widget class="QPushButton" name="stopMotorButton">
+     <property name="text">
+      <string>Stop Motors</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="3">
     <widget class="QPushButton" name="setMotorButton">
      <property name="text">
       <string>Set Motors</string>
@@ -146,13 +153,6 @@
     <widget class="QPushButton" name="reset2Button">
      <property name="text">
       <string>Reset</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="1">
-    <widget class="QPushButton" name="stopMotorButton">
-     <property name="text">
-      <string>Stop Motors</string>
      </property>
     </widget>
    </item>

@@ -55,6 +55,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(ui->actionConnect, SIGNAL(triggered()), DataProvider::getInstance(), SLOT(openSerialPort()));
     connect(ui->actionDisconnect, SIGNAL(triggered()), DataProvider::getInstance(), SLOT(closeSerialPort()));
+    connect(ui->actionSaveAllPlots, SIGNAL(triggered()), DataProvider::getInstance(), SLOT(saveAllPlots()));
     connect(ui->actionQuit, SIGNAL(triggered()), this, SLOT(close()));
     connect(ui->actionClear, SIGNAL(triggered()), ui->serialTabWidget, SLOT(clear()));
     connect(ui->actionPreferences, SIGNAL(triggered()), SettingsDialog::getInstance(), SLOT(show()));

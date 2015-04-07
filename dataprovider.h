@@ -79,6 +79,7 @@ public:
 
     void setSpikePlot(QCustomPlot *spikePlot_);
     void setCanPlot(QCustomPlot *canPlot_);
+    void setControlPlot(QCustomPlot *controlPlot_);
 
     qint64 getTimeSpiNNakerStartInMs() {return this->timeSpiNNakerStartInMs;}
 
@@ -100,6 +101,7 @@ private slots:
     void handleError(QSerialPort::SerialPortError error);
     void openSerialPort();
     void closeSerialPort();
+    void saveAllPlots();
     void calcSpikeRates();
 
 private:
@@ -119,6 +121,7 @@ private:
 
     QCustomPlot *spikePlot;
     QCustomPlot *canPlot;
+    QCustomPlot *controlPlot;
 
     QFileSystemWatcher* watcher;
     QFileSystemWatcher* watcher2;

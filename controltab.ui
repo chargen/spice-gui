@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>648</width>
+    <width>689</width>
     <height>442</height>
    </rect>
   </property>
@@ -14,24 +14,7 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="3" column="0">
-    <widget class="QPushButton" name="toggleButton">
-     <property name="text">
-      <string>Toggle Auto/Manual-Mode</string>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="1">
-    <widget class="QLineEdit" name="valueEdit">
-     <property name="maximumSize">
-      <size>
-       <width>110</width>
-       <height>16777215</height>
-      </size>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="2">
+   <item row="0" column="6">
     <spacer name="horizontalSpacer">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -44,10 +27,24 @@
      </property>
     </spacer>
    </item>
-   <item row="4" column="0" colspan="3">
+   <item row="0" column="1">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Set-point for Joint Position:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1" rowspan="3" colspan="6">
     <widget class="QCustomPlot" name="controlPlot" native="true"/>
    </item>
-   <item row="0" column="0">
+   <item row="1" column="1">
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>TextLabel</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="2">
     <widget class="QSlider" name="valueSlider">
      <property name="minimumSize">
       <size>
@@ -59,6 +56,18 @@
       <size>
        <width>200</width>
        <height>16777215</height>
+      </size>
+     </property>
+     <property name="sizeIncrement">
+      <size>
+       <width>0</width>
+       <height>0</height>
+      </size>
+     </property>
+     <property name="baseSize">
+      <size>
+       <width>0</width>
+       <height>0</height>
       </size>
      </property>
      <property name="minimum">
@@ -86,6 +95,36 @@
       <number>100</number>
      </property>
     </widget>
+   </item>
+   <item row="0" column="4">
+    <widget class="QLineEdit" name="valueEdit">
+     <property name="maximumSize">
+      <size>
+       <width>80</width>
+       <height>16777215</height>
+      </size>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="5">
+    <widget class="QPushButton" name="toggleButton">
+     <property name="text">
+      <string>Toggle Auto/Manual-Mode</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="2">
+    <widget class="QDoubleSpinBox" name="doubleSpinBox">
+     <property name="maximumSize">
+      <size>
+       <width>80</width>
+       <height>16777215</height>
+      </size>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="4">
+    <widget class="QDoubleSpinBox" name="doubleSpinBox_2"/>
    </item>
   </layout>
  </widget>

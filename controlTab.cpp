@@ -38,6 +38,10 @@ ControlTab::ControlTab(QWidget *parent) :
     ui->controlPlot->graph(3)->setLineStyle(QCPGraph::lsNone);
     ui->controlPlot->graph(3)->setScatterStyle(QCPScatterStyle::ssDisc);*/
 
+    ui->controlPlot->legend->setVisible(true);
+    //ui->canPlot->legend->setFont(QFont("Helvetica", 9));
+    //ui->controlPlot->legend->setRowSpacing(-3);
+
     ui->controlPlot->xAxis->setTickLabelType(QCPAxis::ltDateTime);
     ui->controlPlot->xAxis->setDateTimeFormat("mm:ss");
     ui->controlPlot->xAxis->setAutoTickStep(false);
@@ -63,7 +67,7 @@ ControlTab::ControlTab(QWidget *parent) :
     ui->controlPlot->yAxis2->setTicks(true);
     ui->controlPlot->yAxis2->setTickLabels(true);
     //ui->controlPlot->yAxis2->setSubTickLength(1, 1);
-    ui->controlPlot->yAxis2->setLabel("Angle");
+    ui->controlPlot->yAxis2->setLabel("Joint Position");
 
     //ui->controlPlot->yAxis2->setAutoTicks(true);
     //ui->controlPlot->yAxis2->setAutoTickLabels(true);
@@ -79,18 +83,25 @@ ControlTab::ControlTab(QWidget *parent) :
     //ui->controlPlot->yAxis2->setSubTickCount(0);
 
     ui->controlPlot->addGraph(ui->controlPlot->xAxis, ui->controlPlot->yAxis);
-    ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setPen(QPen(QBrush(Qt::red), 5));//setPen(QPen(Qt::blue));
+    ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(200, 60, 250)), 1));//setPen(QPen(Qt::blue));
+    ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setName("Error Value (R)");
+    ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setBrush(QBrush(QColor(241, 236, 254)));
 
     ui->controlPlot->addGraph(ui->controlPlot->xAxis, ui->controlPlot->yAxis);
-    ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(200, 50, 50)), 5));//setPen(QPen(Qt::blue));
+    ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(250, 60, 60)), 1));//setPen(QPen(Qt::blue));
+    ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setName("Error Value (L)");
+    ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setBrush(QBrush(QColor(250, 60, 60, 20)));
 
     //ui->controlPlot->addGraph(ui->controlPlot->xAxis, ui->controlPlot->yAxis2);
     //ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(250, 50, 50)), 5));//setPen(QPen(Qt::blue));
 
     ui->controlPlot->addGraph(ui->controlPlot->xAxis, ui->controlPlot->yAxis2);
     ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(250, 150, 50)), 5));
+    ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setName("Set-point Joint Position");
+
     ui->controlPlot->addGraph(ui->controlPlot->xAxis, ui->controlPlot->yAxis2);
     ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setPen(QPen(QBrush(Qt::blue), 5));
+    ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setName("Current Joint Position");
     //ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setLineStyle(QCPGraph::lsNone);
     //ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 5));
 
@@ -100,7 +111,7 @@ ControlTab::ControlTab(QWidget *parent) :
     connect(ui->controlPlot->xAxis, SIGNAL(rangeChanged(QCPRange)), ui->controlPlot->xAxis2, SLOT(setRange(QCPRange)));
     //connect(ui->controlPlot->yAxis, SIGNAL(rangeChanged(QCPRange)), ui->controlPlot->yAxis2, SLOT(setRange(QCPRange)));
 
-    //DataProvider::getInstance()->setcontrolPlot(ui->controlPlot);
+    DataProvider::getInstance()->setControlPlot(ui->controlPlot);
 
     // set these values as you wish!
     this->showPastTime = 2.0;
@@ -113,9 +124,9 @@ ControlTab::ControlTab(QWidget *parent) :
     this->prev_error = 0;
     this->integral = 0;
     // set these gains appropriately!
-    this->Kp = 3.0; // 1.0
+    this->Kp = 2.8; // 1.0
     this->Ki = 0.0;
-    this->Kd = 2.0; // 1.0
+    this->Kd = 2.5; // 1.0
 
     // setup a timer that repeatedly calls MainWindow::realtimeDataSlot:
     this->updateFrequency = this->windowWidth - this->showPastTime - this->rightBlankTime;
@@ -408,8 +419,8 @@ void ControlTab::sendData()
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
     double keyPlot = (QDateTime::currentDateTime().toMSecsSinceEpoch() - DataProvider::getInstance()->getTimeSpiNNakerStartInMs())/1000.0;
-    this->ui->controlPlot->graph(0)->addData(keyPlot, left_error_final);
-    this->ui->controlPlot->graph(1)->addData(keyPlot, right_error_final);
+    this->ui->controlPlot->graph(0)->addData(keyPlot, right_error_final);
+    this->ui->controlPlot->graph(1)->addData(keyPlot, left_error_final);
     this->ui->controlPlot->graph(2)->addData(keyPlot, target_angle);
     this->ui->controlPlot->graph(3)->addData(keyPlot, current_angle);
 }
@@ -433,4 +444,15 @@ void ControlTab::toggleMode()
 void ControlTab::setValue(int newValue)
 {
     this->ui->valueEdit->setText(QString::number(newValue));
+}
+
+void ControlTab::savePlot()
+{
+    QString filename = "controlPlot";
+
+    ui->controlPlot->savePdf(filename+".pdf", false, 0, 0);
+    //ui->controlPlot->savePdf(filename+"noCosmetics.pdf", true);  // better for editing in Inkscape?
+
+    //ui->controlPlot->setAntialiasedElements(QCP::aeAll);
+    ui->controlPlot->savePng(filename+".png", 0, 0, 2.0, 100);
 }

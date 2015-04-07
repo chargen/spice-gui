@@ -193,11 +193,20 @@ void MuscleDriverCANInterface::cyclicProcessor()
     {
         // actual times can be measured a bit more accurate, using timestamp in handleRxData or so?! or accutime?
         double keyPlot = (QDateTime::currentDateTime().toMSecsSinceEpoch() - DataProvider::getInstance()->getTimeSpiNNakerStartInMs())/1000.0;
-        this->canPlot->graph(0)->addData(keyPlot, motorTransmitAuxData[0].s.current);
-        this->canPlot->graph(1)->addData(keyPlot, motorTransmitAuxData[0].s.displacement);
-        this->canPlot->graph(2)->addData(keyPlot, motorTransmitAuxData[1].s.current);
-        this->canPlot->graph(3)->addData(keyPlot, motorTransmitAuxData[1].s.displacement);
-        this->canPlot->graph(4)->addData(keyPlot, jointData[0].s.jointPosition);
+
+        if(motorTransmitAuxData[0].s.current > -100 && motorTransmitAuxData[0].s.current < 2000)
+            this->canPlot->graph(0)->addData(keyPlot, motorTransmitAuxData[0].s.current);
+
+        if(motorTransmitAuxData[0].s.displacement > -100 && motorTransmitAuxData[0].s.displacement < 2000)
+            this->canPlot->graph(1)->addData(keyPlot, motorTransmitAuxData[0].s.displacement);
+
+        if(motorTransmitAuxData[1].s.current > -100 && motorTransmitAuxData[1].s.current < 2000)
+            this->canPlot->graph(2)->addData(keyPlot, motorTransmitAuxData[1].s.current);
+
+        if(motorTransmitAuxData[1].s.displacement > -100 && motorTransmitAuxData[1].s.displacement < 2000)
+            this->canPlot->graph(3)->addData(keyPlot, motorTransmitAuxData[1].s.displacement);
+
+        this->canPlot->graph(6)->addData(keyPlot, jointData[0].s.jointPosition);
     }
 
     //::std::cout << "jointPosition: " << jointData[0].s.jointPosition << "\tspring 1: " << motorTransmitAuxData[0].s.displacement << "\tspring 2: " << motorTransmitAuxData[1].s.displacement << ::std::endl;
@@ -373,12 +382,12 @@ void MuscleDriverCANInterface::handleRxData(canNotifyData * rxNotifyData)
              if(id == motorRXID[0])
              {
                  //std::cout << "CAN Motor R PWM = " << (*tempDutyCycle) << ::std::endl;
-                 this->canPlot->graph(5)->addData(keyPlot, *tempDutyCycle);
+                 this->canPlot->graph(4)->addData(keyPlot, *tempDutyCycle);
              }
              else if(id == motorRXID[1])
              {
                  //std::cout << "CAN Motor L PWM = " << (*tempDutyCycle) << ::std::endl;
-                 this->canPlot->graph(6)->addData(keyPlot, *tempDutyCycle);
+                 this->canPlot->graph(5)->addData(keyPlot, *tempDutyCycle);
              }
              else
              {

@@ -11,7 +11,6 @@ SOURCES += \
     qcustomplot.cpp \
     mainwindow.cpp \
     serialTab.cpp \
-    plotTab.cpp \
     dataprovider.cpp \
     can/CanInterface.cpp \
     can/KvaserCanInterface.cpp \
@@ -21,7 +20,8 @@ SOURCES += \
     dbconnection.cpp \
     canDataProvider.cpp \
     controlTab.cpp \
-    dbdata.cpp
+    dbdata.cpp \
+    plotTab.cpp
 
 HEADERS += \
     settingsdialog.h \
@@ -29,7 +29,6 @@ HEADERS += \
     qcustomplot.h \
     mainwindow.h \
     serialTab.h \
-    plotTab.h \
     dataprovider.h \
     can/CanInterface.h \
     can/KvaserCanInterface.h \
@@ -38,7 +37,8 @@ HEADERS += \
     dbconnection.h \
     canDataProvider.h \
     controlTab.h \
-    dbdata.h
+    dbdata.h \
+    plotTab.h
 
 FORMS += \
     settingsdialog.ui \

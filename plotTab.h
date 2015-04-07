@@ -25,11 +25,11 @@ public:
     ~PlotTab();
 
     void setMainWindow(MainWindow* mainWindow_);
+    void savePlot();
 
 private slots:
   void realtimeDataSlot();
   void reloadReport();
-  void savePlot();
   void setMotors();
 
 private:

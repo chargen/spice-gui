@@ -195,17 +195,6 @@ void PlotTab::reloadReport()
     DataProvider::getInstance()->parseLatestReport();
 }
 
-void PlotTab::savePlot()
-{
-    QString filename = "spikePlot";
-
-    ui->spikePlot->savePdf(filename+".pdf", false);
-    //ui->spikePlot->savePdf(filename+"noCosmetics.pdf", true);  // better for editing in Inkscape?
-
-    //ui->spikePlot->setAntialiasedElements(QCP::aeAll);
-    ui->spikePlot->savePng(filename+".png", 0, 0, 2.0, 100);
-}
-
 void PlotTab::setMotors()
 {
     if(!DataProvider::getInstance()->serial->isOpen())
@@ -238,4 +227,15 @@ void PlotTab::setMotors()
     qDebug() << "setRightMotor: " << string << " (" << string.length() << ")";
 
     DataProvider::getInstance()->serial->write(data2);
+}
+
+void PlotTab::savePlot()
+{
+    QString filename = "spikePlot";
+
+    ui->spikePlot->savePdf(filename+".pdf", false, 0, 0);
+    //ui->spikePlot->savePdf(filename+"noCosmetics.pdf", true);  // better for editing in Inkscape?
+
+    //ui->spikePlot->setAntialiasedElements(QCP::aeAll);
+    ui->spikePlot->savePng(filename+".png", 0, 0, 2.0, 100);
 }

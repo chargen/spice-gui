@@ -83,6 +83,8 @@
     <addaction name="actionConnect"/>
     <addaction name="actionDisconnect"/>
     <addaction name="separator"/>
+    <addaction name="actionSaveAllPlots"/>
+    <addaction name="separator"/>
     <addaction name="actionQuit"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
@@ -182,6 +184,14 @@
    </property>
    <property name="text">
     <string>Clear</string>
+   </property>
+  </action>
+  <action name="actionSaveAllPlots">
+   <property name="text">
+    <string>&amp;Save All Plots</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
    </property>
   </action>
  </widget>

@@ -25,6 +25,7 @@ public:
     ~CanTab();
 
     void setMainWindow(MainWindow* mainWindow_);
+    void savePlot();
 
 private slots:
   void realtimeDataSlot();

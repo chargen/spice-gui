@@ -55,6 +55,10 @@ CanTab::CanTab(QWidget *parent) :
     ui->canPlot->graph(3)->setLineStyle(QCPGraph::lsNone);
     ui->canPlot->graph(3)->setScatterStyle(QCPScatterStyle::ssDisc);*/
 
+    ui->canPlot->legend->setVisible(true);
+    //ui->canPlot->legend->setFont(QFont("Helvetica", 9));
+    //ui->canPlot->legend->setRowSpacing(-3);
+
     ui->canPlot->xAxis->setTickLabelType(QCPAxis::ltDateTime);
     ui->canPlot->xAxis->setDateTimeFormat("mm:ss");
     ui->canPlot->xAxis->setAutoTickStep(false);
@@ -67,7 +71,7 @@ CanTab::CanTab(QWidget *parent) :
     ui->canPlot->yAxis->setTickVector(QVector<double>() << 5 << 55);
     ui->canPlot->yAxis->setTickVectorLabels(QVector<QString>() << "sdg so\nhigh" << "Very\nhigh");*/
     ui->canPlot->yAxis->setRange(-850, 850);    // fixed range of the joint data
-    ui->canPlot->yAxis->setLabel("Joint Angle");
+    ui->canPlot->yAxis->setLabel("Joint Position");
 
     ui->canPlot->yAxis2->setVisible(true);
     //ui->canPlot->yAxis2->setRange(-10, 500);  // fixed range of the spring displacement data
@@ -80,7 +84,7 @@ CanTab::CanTab(QWidget *parent) :
     ui->canPlot->yAxis2->setTicks(true);
     ui->canPlot->yAxis2->setTickLabels(true);
     //ui->canPlot->yAxis2->setSubTickLength(1, 1);
-    ui->canPlot->yAxis2->setLabel("Motor Current/Spring Displ/PWM");
+    ui->canPlot->yAxis2->setLabel("Current / Spring / PWM");
 
     //ui->canPlot->yAxis2->setAutoTicks(true);
     //ui->canPlot->yAxis2->setAutoTickLabels(true);
@@ -96,29 +100,34 @@ CanTab::CanTab(QWidget *parent) :
     //ui->canPlot->yAxis2->setSubTickCount(0);
 
     ui->canPlot->addGraph(ui->canPlot->xAxis, ui->canPlot->yAxis2);
-    ui->canPlot->graph(ui->canPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(250, 150, 50)), 5));//setPen(QPen(Qt::blue));
+    ui->canPlot->graph(ui->canPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(200, 100, 10)), 3));//setPen(QPen(Qt::blue));
+    ui->canPlot->graph(ui->canPlot->graphCount()-1)->setName("Current (R)");
 
     ui->canPlot->addGraph(ui->canPlot->xAxis, ui->canPlot->yAxis2);
-    ui->canPlot->graph(ui->canPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(250, 50, 50)), 5));//setPen(QPen(Qt::blue));
+    ui->canPlot->graph(ui->canPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(180, 0, 0)), 3, Qt::DashLine));//setPen(QPen(Qt::blue));
+    ui->canPlot->graph(ui->canPlot->graphCount()-1)->setName("Spring (R)");
 
     ui->canPlot->addGraph(ui->canPlot->xAxis, ui->canPlot->yAxis2);
-    ui->canPlot->graph(ui->canPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(200, 100, 10)), 5));//setPen(QPen(Qt::blue));
+    ui->canPlot->graph(ui->canPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(250, 150, 50)), 3));//setPen(QPen(Qt::blue));
+    ui->canPlot->graph(ui->canPlot->graphCount()-1)->setName("Current (L)");
 
     ui->canPlot->addGraph(ui->canPlot->xAxis, ui->canPlot->yAxis2);
-    ui->canPlot->graph(ui->canPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(200, 10, 10)), 5));//setPen(QPen(Qt::blue));
+    ui->canPlot->graph(ui->canPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(250, 60, 60)), 3, Qt::DashLine));//setPen(QPen(Qt::blue));
+    ui->canPlot->graph(ui->canPlot->graphCount()-1)->setName("Spring (L)");
+
+    ui->canPlot->addGraph(ui->canPlot->xAxis, ui->canPlot->yAxis2);
+    ui->canPlot->graph(ui->canPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(10, 100, 10)), 3));//setPen(QPen(Qt::blue));
+    ui->canPlot->graph(ui->canPlot->graphCount()-1)->setName("PWM (R)");
+
+    ui->canPlot->addGraph(ui->canPlot->xAxis, ui->canPlot->yAxis2);
+    ui->canPlot->graph(ui->canPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(30, 150, 30)), 3));//setPen(QPen(Qt::blue));
+    ui->canPlot->graph(ui->canPlot->graphCount()-1)->setName("PWM (L)");
 
     ui->canPlot->addGraph(ui->canPlot->xAxis, ui->canPlot->yAxis);
     ui->canPlot->graph(ui->canPlot->graphCount()-1)->setPen(QPen(QBrush(Qt::blue), 5));//setPen(QPen(Qt::blue));
+    ui->canPlot->graph(ui->canPlot->graphCount()-1)->setName("Joint Position");
     //ui->canPlot->graph(ui->canPlot->graphCount()-1)->setLineStyle(QCPGraph::lsNone);
-    //ui->canPlot->graph(ui->canPlot->graphCount()-1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 5));
-
-    // PWM control right motor
-    ui->canPlot->addGraph(ui->canPlot->xAxis, ui->canPlot->yAxis2);
-    ui->canPlot->graph(ui->canPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(10, 100, 10)), 5));//setPen(QPen(Qt::blue));
-
-    // PWM control left motor
-    ui->canPlot->addGraph(ui->canPlot->xAxis, ui->canPlot->yAxis2);
-    ui->canPlot->graph(ui->canPlot->graphCount()-1)->setPen(QPen(QBrush(QColor(30, 150, 30)), 5));//setPen(QPen(Qt::blue));
+    //ui->canPlot->graph(ui->canPlot->graphCount()-1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDiamond, 5));
 
     ui->canPlot->replot(); // needed?
 
@@ -296,4 +305,15 @@ void CanTab::resetMotor1()
 void CanTab::resetMotor2()
 {
     ui->motor2Slider->setValue(0);
+}
+
+void CanTab::savePlot()
+{
+    QString filename = "canPlot";
+
+    ui->canPlot->savePdf(filename+".pdf", false, 0, 0);
+    //ui->canPlot->savePdf(filename+"noCosmetics.pdf", true);  // better for editing in Inkscape?
+
+    //ui->canPlot->setAntialiasedElements(QCP::aeAll);
+    ui->canPlot->savePng(filename+".png", 0, 0, 2.0, 100);
 }

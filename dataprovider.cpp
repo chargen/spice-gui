@@ -24,8 +24,10 @@ DataProvider::DataProvider(QObject *parent) :
     port = 0;
 
     this->mainWindow = NULL;
+
     this->spikePlot = NULL;
     this->canPlot = NULL;
+    this->controlPlot = NULL;
 
     this->timeSpiNNakerStartInMs = 0;
 
@@ -199,7 +201,7 @@ bool DataProvider::parseLatestReport()
             currGraphOffset += 1;
         }
 
-        qDebug() << "Added Vertex" << popName << "of model" << regVertexInfo.cap(2) << "with population size" << regVertexInfo.cap(3);
+        qDebug() << "Added Vertex" << popName << "of model" << regVertexInfo.cap(2) << "with population size = " << regVertexInfo.cap(3) << ", graphOffset = " << vecVertices.back().graphOffset << ", graphCount = " << vecVertices.back().graphCount;
     }
     qDebug() << "=> we got" << QString::number(vecVertices.size()) << "vertices.";
 
@@ -322,7 +324,8 @@ bool DataProvider::parseLatestReport()
     }
     for(size_t v=0; v<vecVertices.size(); v++)
     {
-        tickVectorLabels[vecVertices.at(v).graphOffset] = QString::fromStdString(vecVertices.at(v).name);
+        if(vecVertices.at(v).graphCount > 0)
+            tickVectorLabels[vecVertices.at(v).graphOffset] = QString::fromStdString(vecVertices.at(v).name);
 
         /*if(true)
         {
@@ -359,7 +362,7 @@ bool DataProvider::parseLatestReport()
             line->setPen(QPen(Qt::black, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
             this->spikePlot->addItem(line);
             line->point1->setCoords(0, vecVertices.at(v).graphOffset-1);
-            line->point2->setCoords(1, vecVertices.at(v).graphOffset-1);
+            line->point2->setCoords(std::numeric_limits<double>::max(), vecVertices.at(v).graphOffset-1);
         }
     }
     //arrow->start->setParentAnchor(textLabel->bottom);
@@ -470,25 +473,24 @@ void DataProvider::readData()
             dataStream >> dataChipX;
 
             SubvertexInfo* subvertex = &mapPopByCoord.at(std::make_tuple(dataChipX, dataChipY, dataCoreID));
+            dataNeuronID += subvertex->sliceStart;  // convert from relative neuron ID to absolute neuron ID
 
-            //qDebug() << "=> Spike: " << dataChipX << " | " << dataChipY << " | " << dataS << " | " << dataCoreID << " | " << dataNeuronID << " | " << QString::fromStdString(subvertex->vertex->model) << " | " << QString::fromStdString(subvertex->vertex->name);
+            //qDebug() << "=> Spike: " << dataChipX << " | " << dataChipY << " | "  << dataCoreID << " | " << dataNeuronID << " | " << QString::fromStdString(subvertex->vertex->model) << " | " << QString::fromStdString(subvertex->vertex->name) << " | " << subvertex->vertex->graphCount;
 
-            if(this->spikePlot != NULL)
+            // omit spikes which come from neurons we are not interested in for plotting
+            if(dataNeuronID < subvertex->vertex->graphCount)
             {
-                // omit spikes which come from neurons we are not interested in for plotting
-                if(dataNeuronID < subvertex->vertex->graphCount)
-                {
-                    // TODO: read in "Machine time step" from report file machine_structure.rpt and use this as scale factor
+                // TODO: read in "Machine time step" from report file machine_structure.rpt and use this as scale factor
 
-                    // should be 1000.0 for a timestep of 1.0
-                    // before: 10.000
-                    double key = scpTime/1000.0*0.6;//QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - this->getTimeLastParsedInMs()/1000.0;
-                    uint graphID = subvertex->vertex->graphOffset + dataNeuronID;
+                // should be 1000.0 for a timestep of 1.0
+                // before: 10.000
+                double key = scpTime/1000.0*0.6;//QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - this->getTimeLastParsedInMs()/1000.0;
+                uint graphID = subvertex->vertex->graphOffset + dataNeuronID;
+                if(this->spikePlot != NULL)
                     this->spikePlot->graph(graphID)->addData(key, graphID);
 
-                    // TODO: test performance !! how to avoid repetatively calls when active is false?
-                    this->dbData->insertSpike(key, subvertex->vertex->graphOffset, dataNeuronID);
-                }
+                // TODO: test performance !! how to avoid repetatively calls when active is false?
+                this->dbData->insertSpike(key, subvertex->vertex->graphOffset, dataNeuronID);
             }
         }
     }
@@ -502,6 +504,11 @@ void DataProvider::setSpikePlot(QCustomPlot *spikePlot_)
 void DataProvider::setCanPlot(QCustomPlot *canPlot_)
 {
     this->canPlot = canPlot_;
+}
+
+void DataProvider::setControlPlot(QCustomPlot *controlPlot_)
+{
+    this->controlPlot = controlPlot_;
 }
 
 void DataProvider::displayError(QAbstractSocket::SocketError socketError)
@@ -591,6 +598,88 @@ void DataProvider::stopCan()
         // TODO fixme, crashes always :)
         delete canInterface;
         canInterface = NULL;
+    }
+}
+
+void DataProvider::saveAllPlots()
+{
+    if(!QDir("plots").exists())
+        QDir().mkdir("plots");
+
+    int currCount = 1;
+    while(QDir("plots/"+QString::number(currCount)).exists())
+        currCount++;
+    QString path = "plots/"+QString::number(currCount);
+    QDir().mkdir(path);
+
+    if(spikePlot != NULL)
+    {
+        QString filename = path+"/spikePlot";
+
+        spikePlot->savePdf(filename+".pdf", false, 0, 0);
+        //spikePlot->savePdf(filename+"noCosmetics.pdf", true);  // better for editing in Inkscape?
+
+        //spikePlot->setAntialiasedElements(QCP::aeAll);
+        spikePlot->savePng(filename+".png", 0, 0, 2.0, 100);
+    }
+
+    if(canPlot != NULL)
+    {
+        QString filename = path+"/canPlot";
+
+        canPlot->savePdf(filename+".pdf", false, 0, 0);
+        //canPlot->savePdf(filename+"noCosmetics.pdf", true);  // better for editing in Inkscape?
+
+        //canPlot->setAntialiasedElements(QCP::aeAll);
+        canPlot->savePng(filename+".png", 0, 0, 2.0, 100);
+    }
+
+    if(controlPlot != NULL)
+    {
+        QString filename = path+"/controlPlot";
+
+        controlPlot->savePdf(filename+".pdf", false, 0, 0);
+        //controlPlot->savePdf(filename+"noCosmetics.pdf", true);  // better for editing in Inkscape?
+
+        //controlPlot->setAntialiasedElements(QCP::aeAll);
+        controlPlot->savePng(filename+".png", 0, 0, 2.0, 100);
+    }
+
+    // print again with fixed uniform size
+    int fixedWidth = 1248;
+    int fixedHeight = 702;
+
+    if(spikePlot != NULL)
+    {
+        QString filename = path+"/spikePlot-uniform";
+
+        spikePlot->savePdf(filename+".pdf", false, fixedWidth, fixedHeight);
+        //spikePlot->savePdf(filename+"noCosmetics.pdf", true);  // better for editing in Inkscape?
+
+        //spikePlot->setAntialiasedElements(QCP::aeAll);
+        spikePlot->savePng(filename+".png", fixedWidth, fixedHeight, 2.0, 100);
+    }
+
+    if(canPlot != NULL)
+    {
+        QString filename = path+"/canPlot-uniform";
+
+        canPlot->savePdf(filename+".pdf", false, fixedWidth, fixedHeight);
+        //canPlot->savePdf(filename+"noCosmetics.pdf", true);  // better for editing in Inkscape?
+
+        //canPlot->setAntialiasedElements(QCP::aeAll);
+        canPlot->savePng(filename+".png", fixedWidth, fixedHeight, 2.0, 100);
+    }
+
+    if(controlPlot != NULL)
+    {
+        QString filename = path+"/controlPlot-uniform";
+
+        controlPlot->savePdf(filename+".pdf", false, fixedWidth, fixedHeight);
+        //controlPlot->savePdf(filename+"noCosmetics.pdf", true);  // better for editing in Inkscape?
+
+        //controlPlot->setAntialiasedElements(QCP::aeAll);
+        controlPlot->savePng(filename+".png", fixedWidth, fixedHeight, 2.0, 100);
     }
 }
 
