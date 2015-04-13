@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>689</width>
+    <width>708</width>
     <height>442</height>
    </rect>
   </property>
@@ -14,7 +14,7 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="6">
+   <item row="0" column="7">
     <spacer name="horizontalSpacer">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -34,21 +34,21 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="1" rowspan="3" colspan="6">
+   <item row="2" column="1" rowspan="3" colspan="7">
     <widget class="QCustomPlot" name="controlPlot" native="true"/>
    </item>
    <item row="1" column="1">
     <widget class="QLabel" name="label_2">
      <property name="text">
-      <string>TextLabel</string>
+      <string>Learning Gains (Kp, Ki, Kd):</string>
      </property>
     </widget>
    </item>
-   <item row="0" column="2">
+   <item row="0" column="2" colspan="3">
     <widget class="QSlider" name="valueSlider">
      <property name="minimumSize">
       <size>
-       <width>200</width>
+       <width>220</width>
        <height>0</height>
       </size>
      </property>
@@ -96,7 +96,7 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="4">
+   <item row="0" column="5">
     <widget class="QLineEdit" name="valueEdit">
      <property name="maximumSize">
       <size>
@@ -106,7 +106,7 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="5">
+   <item row="0" column="6">
     <widget class="QPushButton" name="toggleButton">
      <property name="text">
       <string>Toggle Auto/Manual-Mode</string>
@@ -114,17 +114,82 @@
     </widget>
    </item>
    <item row="1" column="2">
-    <widget class="QDoubleSpinBox" name="doubleSpinBox">
+    <widget class="QDoubleSpinBox" name="doubleSpinBoxKp">
      <property name="maximumSize">
       <size>
        <width>80</width>
        <height>16777215</height>
       </size>
      </property>
+     <property name="readOnly">
+      <bool>false</bool>
+     </property>
+     <property name="specialValueText">
+      <string/>
+     </property>
+     <property name="prefix">
+      <string/>
+     </property>
+     <property name="suffix">
+      <string/>
+     </property>
+     <property name="decimals">
+      <number>1</number>
+     </property>
+     <property name="minimum">
+      <double>0.000000000000000</double>
+     </property>
+     <property name="maximum">
+      <double>20.000000000000000</double>
+     </property>
+     <property name="singleStep">
+      <double>0.500000000000000</double>
+     </property>
+     <property name="value">
+      <double>3.000000000000000</double>
+     </property>
     </widget>
    </item>
    <item row="1" column="4">
-    <widget class="QDoubleSpinBox" name="doubleSpinBox_2"/>
+    <widget class="QDoubleSpinBox" name="doubleSpinBoxKd">
+     <property name="maximumSize">
+      <size>
+       <width>80</width>
+       <height>16777215</height>
+      </size>
+     </property>
+     <property name="decimals">
+      <number>1</number>
+     </property>
+     <property name="maximum">
+      <double>20.000000000000000</double>
+     </property>
+     <property name="singleStep">
+      <double>0.500000000000000</double>
+     </property>
+     <property name="value">
+      <double>2.500000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="3">
+    <widget class="QDoubleSpinBox" name="doubleSpinBoxKi">
+     <property name="maximumSize">
+      <size>
+       <width>80</width>
+       <height>16777215</height>
+      </size>
+     </property>
+     <property name="decimals">
+      <number>1</number>
+     </property>
+     <property name="maximum">
+      <double>20.000000000000000</double>
+     </property>
+     <property name="singleStep">
+      <double>0.500000000000000</double>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>

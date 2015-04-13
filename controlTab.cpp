@@ -18,6 +18,9 @@ ControlTab::ControlTab(QWidget *parent) :
     this->ui->valueEdit->setDisabled(true);
     connect(ui->toggleButton, SIGNAL(clicked()), this, SLOT(toggleMode()));
     connect(ui->valueSlider, SIGNAL(valueChanged(int)), this, SLOT(setValue(int)));
+    connect(ui->doubleSpinBoxKp, SIGNAL(valueChanged(double)), this, SLOT(setKp(double)));
+    connect(ui->doubleSpinBoxKi, SIGNAL(valueChanged(double)), this, SLOT(setKi(double)));
+    connect(ui->doubleSpinBoxKd, SIGNAL(valueChanged(double)), this, SLOT(setKd(double)));
 
     // include this section to fully disable antialiasing for higher performance:
 /*
@@ -123,10 +126,9 @@ ControlTab::ControlTab(QWidget *parent) :
 
     this->prev_error = 0;
     this->integral = 0;
-    // set these gains appropriately!
-    this->Kp = 2.8; // 1.0
-    this->Ki = 0.0;
-    this->Kd = 2.5; // 1.0
+    this->setKp(2.8);
+    this->setKi(0.0);
+    this->setKd(2.5);
 
     // setup a timer that repeatedly calls MainWindow::realtimeDataSlot:
     this->updateFrequency = this->windowWidth - this->showPastTime - this->rightBlankTime;
@@ -444,6 +446,24 @@ void ControlTab::toggleMode()
 void ControlTab::setValue(int newValue)
 {
     this->ui->valueEdit->setText(QString::number(newValue));
+}
+
+void ControlTab::setKp(double newValue)
+{
+    this->Kp = newValue;
+    this->ui->doubleSpinBoxKp->setValue(newValue);
+}
+
+void ControlTab::setKi(double newValue)
+{
+    this->Ki = newValue;
+    this->ui->doubleSpinBoxKi->setValue(newValue);
+}
+
+void ControlTab::setKd(double newValue)
+{
+    this->Kd = newValue;
+    this->ui->doubleSpinBoxKd->setValue(newValue);
 }
 
 void ControlTab::savePlot()

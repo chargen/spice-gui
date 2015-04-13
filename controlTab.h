@@ -36,6 +36,9 @@ private slots:
 
   void toggleMode();
   void setValue(int newValue);
+  void setKp(double newValue);
+  void setKi(double newValue);
+  void setKd(double newValue);
 
 private:
     Ui::ControlTab *ui;

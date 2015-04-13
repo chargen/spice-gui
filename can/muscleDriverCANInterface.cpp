@@ -206,7 +206,7 @@ void MuscleDriverCANInterface::cyclicProcessor()
         if(motorTransmitAuxData[1].s.displacement > -100 && motorTransmitAuxData[1].s.displacement < 2000)
             this->canPlot->graph(3)->addData(keyPlot, motorTransmitAuxData[1].s.displacement);
 
-        this->canPlot->graph(6)->addData(keyPlot, jointData[0].s.jointPosition);
+        //this->canPlot->graph(6)->addData(keyPlot, jointData[0].s.jointPosition);
     }
 
     //::std::cout << "jointPosition: " << jointData[0].s.jointPosition << "\tspring 1: " << motorTransmitAuxData[0].s.displacement << "\tspring 2: " << motorTransmitAuxData[1].s.displacement << ::std::endl;
