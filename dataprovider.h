@@ -85,6 +85,8 @@ public:
 
     QSerialPort* serial;
 
+    DBData* dbData;
+
     void startCan();
     void stopCan();
     MuscleDriverCANInterface* canInterface;
@@ -127,7 +129,6 @@ private:
     QFileSystemWatcher* watcher2;
 
     DBConnection* dbConnection;
-    DBData* dbData;
 
     QMutex mutex;
     float dutyCycle[MAX_DRIVERS_AND_JOINTS];

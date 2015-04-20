@@ -420,11 +420,12 @@ void ControlTab::sendData()
         // TODO: needed? but it really hurts here, and slows down everything!!
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
-    double keyPlot = (QDateTime::currentDateTime().toMSecsSinceEpoch() - DataProvider::getInstance()->getTimeSpiNNakerStartInMs())/1000.0;
-    this->ui->controlPlot->graph(0)->addData(keyPlot, right_error_final);
-    this->ui->controlPlot->graph(1)->addData(keyPlot, left_error_final);
-    this->ui->controlPlot->graph(2)->addData(keyPlot, target_angle);
-    this->ui->controlPlot->graph(3)->addData(keyPlot, current_angle);
+    double key = (QDateTime::currentDateTime().toMSecsSinceEpoch() - DataProvider::getInstance()->getTimeSpiNNakerStartInMs())/1000.0;
+    DataProvider::getInstance()->dbData->insertControl(key, current_angle, target_angle, left_error_final, right_error_final);
+    this->ui->controlPlot->graph(0)->addData(key, right_error_final);
+    this->ui->controlPlot->graph(1)->addData(key, left_error_final);
+    this->ui->controlPlot->graph(2)->addData(key, target_angle);
+    this->ui->controlPlot->graph(3)->addData(key, current_angle);
 }
 
 void ControlTab::toggleMode()

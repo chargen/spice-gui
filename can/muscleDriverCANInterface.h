@@ -112,6 +112,8 @@ private:
     QMap<int, int> CANIDmap;
     //array with the associated data,  motor drives with two messages each plus  joint
     char rxDataFields[2*MAX_DRIVERS_AND_JOINTS + MAX_DRIVERS_AND_JOINTS] [8];
+    float pwm_l;
+    float pwm_r;
     //signals:
     //    void valueChanged(int newValue);
 

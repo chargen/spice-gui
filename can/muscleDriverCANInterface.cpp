@@ -33,6 +33,9 @@ MuscleDriverCANInterface::MuscleDriverCANInterface(int cycleTimeInMilliSeconds, 
     m_reference1 = 0.0;
     m_reference2 = 0.0;
 
+    pwm_l = 0.0;
+    pwm_r = 0.0;
+
     //read init file
     readInit();
 
@@ -188,26 +191,37 @@ void MuscleDriverCANInterface::cyclicProcessor()
 	//motorCommand[1].s.dutyCycle=-800.0;
 
 
+
     // TODO: don't do this every 10ms ... move to separate thread, e.g. similar to sendData in the Controltab
+
+    // actual times can be measured a bit more accurate, using timestamp in handleRxData or so?! or accutime?
+    double key = (QDateTime::currentDateTime().toMSecsSinceEpoch() - DataProvider::getInstance()->getTimeSpiNNakerStartInMs())/1000.0;
+
+    DataProvider::getInstance()->dbData->insertBus(key, motorTransmitAuxData[0].s.current, motorTransmitAuxData[0].s.displacement, motorCommand[0].s.dutyCycle, motorTransmitAuxData[1].s.current, motorTransmitAuxData[1].s.displacement, motorCommand[1].s.dutyCycle);
+
     if(this->canPlot != NULL)
     {
-        // actual times can be measured a bit more accurate, using timestamp in handleRxData or so?! or accutime?
-        double keyPlot = (QDateTime::currentDateTime().toMSecsSinceEpoch() - DataProvider::getInstance()->getTimeSpiNNakerStartInMs())/1000.0;
-
         if(motorTransmitAuxData[0].s.current > -100 && motorTransmitAuxData[0].s.current < 2000)
-            this->canPlot->graph(0)->addData(keyPlot, motorTransmitAuxData[0].s.current);
+            this->canPlot->graph(0)->addData(key, motorTransmitAuxData[0].s.current);
 
         if(motorTransmitAuxData[0].s.displacement > -100 && motorTransmitAuxData[0].s.displacement < 2000)
-            this->canPlot->graph(1)->addData(keyPlot, motorTransmitAuxData[0].s.displacement);
+            this->canPlot->graph(1)->addData(key, motorTransmitAuxData[0].s.displacement);
 
         if(motorTransmitAuxData[1].s.current > -100 && motorTransmitAuxData[1].s.current < 2000)
-            this->canPlot->graph(2)->addData(keyPlot, motorTransmitAuxData[1].s.current);
+            this->canPlot->graph(2)->addData(key, motorTransmitAuxData[1].s.current);
 
         if(motorTransmitAuxData[1].s.displacement > -100 && motorTransmitAuxData[1].s.displacement < 2000)
-            this->canPlot->graph(3)->addData(keyPlot, motorTransmitAuxData[1].s.displacement);
+            this->canPlot->graph(3)->addData(key, motorTransmitAuxData[1].s.displacement);
+
+        this->canPlot->graph(4)->addData(key, motorCommand[0].s.dutyCycle);
+
+        this->canPlot->graph(5)->addData(key, motorCommand[1].s.dutyCycle);
 
         //this->canPlot->graph(6)->addData(keyPlot, jointData[0].s.jointPosition);
     }
+
+
+
 
     //::std::cout << "jointPosition: " << jointData[0].s.jointPosition << "\tspring 1: " << motorTransmitAuxData[0].s.displacement << "\tspring 2: " << motorTransmitAuxData[1].s.displacement << ::std::endl;
 
@@ -345,22 +359,19 @@ void MuscleDriverCANInterface::handleRxData(canNotifyData * rxNotifyData)
     Q_UNUSED(rxNotifyData);
 
     //int handle;
-	    long id;
-	    char data[8];
-	    unsigned int dlc, flags;
-	    unsigned long timestamp;
-        //STATUS_CODE stat;
-
-     double keyPlot = (QDateTime::currentDateTime().toMSecsSinceEpoch() - DataProvider::getInstance()->getTimeSpiNNakerStartInMs())/1000.0;
+    long id;
+    char data[8];
+    unsigned int dlc, flags;
+    unsigned long timestamp;
+    //STATUS_CODE stat;
 
 	 while (canERR_NOMSG != canRead(busHandle0, &id, data, &dlc, &flags, &timestamp))
 	 {
-
          QMap<int, int>::const_iterator it=CANIDmap.find(id); //find the data index from CAN ID
 		 if (it!=CANIDmap.end())
 		 {
 			 mutex.lock();
-			 newDataArrived=1; //set the new Data Flag
+             newDataArrived = 1; //set the new Data Flag
 			 //we found the id, copy data into storage array
 			 //thereby creating a local copy of the latest CAN-bus data;
 			 //cout<<"id: 0x"<<hex <<id<<" "<<"datafield index: "<< it.value() ;
@@ -382,12 +393,18 @@ void MuscleDriverCANInterface::handleRxData(canNotifyData * rxNotifyData)
              if(id == motorRXID[0])
              {
                  //std::cout << "CAN Motor R PWM = " << (*tempDutyCycle) << ::std::endl;
-                 this->canPlot->graph(4)->addData(keyPlot, *tempDutyCycle);
+                 mutex.lock();
+                 newDataArrived = 1;
+                 pwm_r = *tempDutyCycle;
+                 mutex.unlock();
              }
              else if(id == motorRXID[1])
              {
                  //std::cout << "CAN Motor L PWM = " << (*tempDutyCycle) << ::std::endl;
-                 this->canPlot->graph(5)->addData(keyPlot, *tempDutyCycle);
+                 mutex.lock();
+                 newDataArrived = 1;
+                 pwm_l = *tempDutyCycle;
+                 mutex.unlock();
              }
              else
              {
@@ -593,9 +610,11 @@ void MuscleDriverCANInterface::bufferCANData()
 			   motorTransmitAuxData[i].data[j]=rxDataFields[i*3 + 1][j];
 		   	   jointData[i].data[j]= rxDataFields[i*3 + 2][j];
 		   }
-
-
 	 }
+
+     motorCommand[0].s.dutyCycle = pwm_l;
+     motorCommand[1].s.dutyCycle = pwm_r;
+
 	 mutex.unlock();
 }
 

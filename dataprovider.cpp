@@ -39,8 +39,14 @@ DataProvider::DataProvider(QObject *parent) :
     this->canInterface = NULL;
 
     this->dbData = new DBData(this);
+
+    // set to true to enable logging !!
+    this->dbData->setBusRecord(false);
+    this->dbData->setControlRecord(false);
     this->dbData->setSpikeRecord(false);
-    this->dbData->setControlRecord(true);
+
+    this->dbData->clearAllData();
+
     //this->dbConnection = new DBConnection(this);
     // test code starts!!
 
@@ -430,6 +436,9 @@ void DataProvider::appRunning(const QString& path)
     this->timeSpiNNakerStartInMs = (qint64)(line.toDouble() * 1000.0);
     ::std::cout << "SpiNNaker started -> set timeSpiNNakerStartInMs to " << this->timeSpiNNakerStartInMs << ::std::endl;
     f.close();
+
+    // clear the logging database
+    this->dbData->clearAllData();
 
     // workaround for Qt bug: http://stackoverflow.com/questions/18300376/qt-qfilesystemwatcher-singal-filechanged-gets-emited-only-once
     QFileInfo checkFile(path);
