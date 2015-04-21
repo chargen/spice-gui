@@ -23,6 +23,8 @@ public:
 
 private slots:
        void about();
+       void setLogOn();
+       void setLogOff();
 
 private:
     Ui::MainWindow *ui;

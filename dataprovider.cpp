@@ -40,7 +40,6 @@ DataProvider::DataProvider(QObject *parent) :
 
     this->dbData = new DBData(this);
 
-    // set to true to enable logging !!
     this->dbData->setBusRecord(false);
     this->dbData->setControlRecord(false);
     this->dbData->setSpikeRecord(false);

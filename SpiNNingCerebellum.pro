@@ -52,3 +52,5 @@ RESOURCES += \
     icons.qrc
 
 LIBS += -lcanlib
+
+OTHER_FILES +=

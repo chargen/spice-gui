@@ -50,12 +50,16 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->actionConnect->setEnabled(true);
     ui->actionDisconnect->setEnabled(false);
+    ui->actionLogOn->setEnabled(true);
+    ui->actionLogOff->setEnabled(false);
     ui->actionQuit->setEnabled(true);
     ui->actionPreferences->setEnabled(true);
 
     connect(ui->actionConnect, SIGNAL(triggered()), DataProvider::getInstance(), SLOT(openSerialPort()));
     connect(ui->actionDisconnect, SIGNAL(triggered()), DataProvider::getInstance(), SLOT(closeSerialPort()));
     connect(ui->actionSaveAllPlots, SIGNAL(triggered()), DataProvider::getInstance(), SLOT(saveAllPlots()));
+    connect(ui->actionLogOn, SIGNAL(triggered()), this, SLOT(setLogOn()));
+    connect(ui->actionLogOff, SIGNAL(triggered()), this, SLOT(setLogOff()));
     connect(ui->actionQuit, SIGNAL(triggered()), this, SLOT(close()));
     connect(ui->actionClear, SIGNAL(triggered()), ui->serialTabWidget, SLOT(clear()));
     connect(ui->actionPreferences, SIGNAL(triggered()), SettingsDialog::getInstance(), SLOT(show()));
@@ -91,4 +95,28 @@ void MainWindow::about()
 {
     QMessageBox::about(this, tr("About SpiNNingCerebellum"),
                        tr("This my friend is <b>top secret</b> !"));
+}
+
+void MainWindow::setLogOn()
+{
+    ::std::cout << "Turn on logging." << ::std::endl;
+
+    DataProvider::getInstance()->dbData->setBusRecord(true);
+    DataProvider::getInstance()->dbData->setControlRecord(true);
+    DataProvider::getInstance()->dbData->setSpikeRecord(true);
+
+    ui->actionLogOn->setEnabled(false);
+    ui->actionLogOff->setEnabled(true);
+}
+
+void MainWindow::setLogOff()
+{
+    ::std::cout << "Turn off logging." << ::std::endl;
+
+    DataProvider::getInstance()->dbData->setBusRecord(false);
+    DataProvider::getInstance()->dbData->setControlRecord(false);
+    DataProvider::getInstance()->dbData->setSpikeRecord(false);
+
+    ui->actionLogOff->setEnabled(false);
+    ui->actionLogOn->setEnabled(true);
 }

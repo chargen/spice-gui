@@ -120,6 +120,8 @@
    <addaction name="actionConnect"/>
    <addaction name="actionDisconnect"/>
    <addaction name="actionClear"/>
+   <addaction name="actionLogOn"/>
+   <addaction name="actionLogOff"/>
    <addaction name="actionPreferences"/>
   </widget>
   <action name="actionConnect">
@@ -144,6 +146,30 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+D</string>
+   </property>
+  </action>
+  <action name="actionLogOn">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/images/log-on.png</normaloff>:/images/log-on.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Log On</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+L</string>
+   </property>
+  </action>
+  <action name="actionLogOff">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/images/log-off.png</normaloff>:/images/log-off.png</iconset>
+   </property>
+   <property name="text">
+    <string>Log O&amp;ff</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+F</string>
    </property>
   </action>
   <action name="actionQuit">
