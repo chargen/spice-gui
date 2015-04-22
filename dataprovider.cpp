@@ -480,26 +480,44 @@ void DataProvider::readData()
             dataStream >> dataChipY;
             dataStream >> dataChipX;
 
-            SubvertexInfo* subvertex = &mapPopByCoord.at(std::make_tuple(dataChipX, dataChipY, dataCoreID));
+            if(dataCoreID == 0)
+            {
+                ::std::cout << "GET spike from core 0. This is strange, but not a problem for us! :)" << ::std::endl;
+                continue;
+            }
+
+            SubvertexInfo* subvertex = NULL;
+            try
+            {
+                subvertex = &mapPopByCoord.at(std::make_tuple(dataChipX, dataChipY, dataCoreID));
+            }
+            catch(const std::out_of_range& e)
+            {
+                ::std::cout << "FAIL: " << dataChipX << " | " <<  dataChipY << " | " << dataCoreID << " || " << dataNeuronID << ::std::endl;
+                continue;
+            }
+
+
             dataNeuronID += subvertex->sliceStart;  // convert from relative neuron ID to absolute neuron ID
 
             //qDebug() << "=> Spike: " << dataChipX << " | " << dataChipY << " | "  << dataCoreID << " | " << dataNeuronID << " | " << QString::fromStdString(subvertex->vertex->model) << " | " << QString::fromStdString(subvertex->vertex->name) << " | " << subvertex->vertex->graphCount;
 
+            // TODO: read in "Machine time step" from report file machine_structure.rpt and use this as scale factor
+
+            // should be 1000.0 for a timestep of 1.0
+            // before: 10.000
+            double key = scpTime/1000.0*0.6;//QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - this->getTimeLastParsedInMs()/1000.0;
+
             // omit spikes which come from neurons we are not interested in for plotting
             if(dataNeuronID < subvertex->vertex->graphCount)
             {
-                // TODO: read in "Machine time step" from report file machine_structure.rpt and use this as scale factor
-
-                // should be 1000.0 for a timestep of 1.0
-                // before: 10.000
-                double key = scpTime/1000.0*0.6;//QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - this->getTimeLastParsedInMs()/1000.0;
                 uint graphID = subvertex->vertex->graphOffset + dataNeuronID;
                 if(this->spikePlot != NULL)
                     this->spikePlot->graph(graphID)->addData(key, graphID);
-
-                // TODO: test performance !! how to avoid repetatively calls when active is false?
-                this->dbData->insertSpike(key, subvertex->vertex->graphOffset, dataNeuronID);
             }
+
+            // TODO: test performance !! how to avoid repetatively calls when active is false?
+            this->dbData->insertSpike(key, QString::fromStdString(subvertex->vertex->name), dataNeuronID);
         }
     }
 }

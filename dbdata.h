@@ -14,9 +14,9 @@ public:
     DBData(QObject *parent = 0);
     ~DBData();
 
-    void insertBus(double time, uint current_l, uint spring_l, float pwm_l, uint current_r, uint spring_r, float pwm_r);
-    void insertControl(double time, uint current_angle, uint target_angle, uint left_error, uint right_error);
-    void insertSpike(double time, uint population, uint neuron);
+    void insertBus(double time, int current_l, int spring_l, float pwm_l, int current_r, int spring_r, float pwm_r);
+    void insertControl(double time, int current_angle, int target_angle, int left_error, int right_error);
+    void insertSpike(double time, QString population, uint neuron);
 
     void setBusRecord(bool _active);
     void setControlRecord(bool _active);
