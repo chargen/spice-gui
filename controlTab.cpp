@@ -22,6 +22,8 @@ ControlTab::ControlTab(QWidget *parent) :
     connect(ui->doubleSpinBoxKi, SIGNAL(valueChanged(double)), this, SLOT(setKi(double)));
     connect(ui->doubleSpinBoxKd, SIGNAL(valueChanged(double)), this, SLOT(setKd(double)));
 
+    duration_max = 0;
+
     // include this section to fully disable antialiasing for higher performance:
 /*
     ui->controlPlot->setNotAntialiasedElements(QCP::aeAll);
@@ -135,7 +137,7 @@ ControlTab::ControlTab(QWidget *parent) :
     this->timeSpiNNakerStartBefore = DataProvider::getInstance()->getTimeSpiNNakerStartInMs();
     this->plotStartTime = std::floor((QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - this->timeSpiNNakerStartBefore/1000.0) - this->updateFrequency);
     connect(&dataTimer, SIGNAL(timeout()), this, SLOT(realtimeDataSlot()));
-    dataTimer.start(50); // Interval 0 means to refresh as fast as possible
+    dataTimer.start(1000); // 50! Interval 0 means to refresh as fast as possible
 
 
 
@@ -279,7 +281,7 @@ void ControlTab::sendData()
 
     if(this->modeAutoTraj)
     {
-        target_angle = 800.0*sin(0.2*QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0);
+        target_angle = 800.0*sin(0.3*QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0); // was 0.2 * before (smaller = slower)
         this->ui->valueSlider->setValue(target_angle);
     }
     else
@@ -362,7 +364,7 @@ void ControlTab::sendData()
         DataProvider::getInstance()->serial->write(data);
 
         // TODO: needed? but it really hurts here, and slows down everything!!
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        //std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
         valueHexString = QString::number(right_error_final, 16);
         string = "@FEFFFE31.00000";
@@ -377,7 +379,7 @@ void ControlTab::sendData()
         DataProvider::getInstance()->serial->write(data2);
 
         // TODO: needed? but it really hurts here, and slows down everything!!
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        //std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
         valueHexString = QString::number(left_error_final, 16);
         string = "@FEFFFE32.00000";
@@ -392,9 +394,9 @@ void ControlTab::sendData()
         DataProvider::getInstance()->serial->write(data3);
 
         // TODO: needed? but it really hurts here, and slows down everything!!
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        //std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
-        valueHexString = QString::number(left_error_final, 16);
+        /*valueHexString = QString::number(left_error_final, 16);
         string = "@FEFFFE40.00000";
         for(int i=0; i<3-valueHexString.length(); i++)
             string.append("0");
@@ -418,10 +420,18 @@ void ControlTab::sendData()
         DataProvider::getInstance()->serial->write(data5);
 
         // TODO: needed? but it really hurts here, and slows down everything!!
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));*/
     }
     double key = (QDateTime::currentDateTime().toMSecsSinceEpoch() - DataProvider::getInstance()->getTimeSpiNNakerStartInMs())/1000.0;
+
+    //std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
     DataProvider::getInstance()->dbData->insertControl(key, current_angle, target_angle, left_error_final, right_error_final);
+    //std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
+    //auto duration = std::chrono::duration_cast< std::chrono::microseconds >( t2 - t1 ).count();
+    /*if(duration > duration_max)
+        duration_max = duration;
+    std::cout << key << ": " << "duration insert: " << (duration/1000.0) << " ms | max: " << (duration_max/1000.0) << ::std::endl;*/
+
     this->ui->controlPlot->graph(0)->addData(key, right_error_final);
     this->ui->controlPlot->graph(1)->addData(key, left_error_final);
     this->ui->controlPlot->graph(2)->addData(key, target_angle);

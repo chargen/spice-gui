@@ -61,6 +61,8 @@ private:
     double Kp;
     double Ki;
     double Kd;
+
+    double duration_max;
 };
 
 #endif // CONTROLTAB_H

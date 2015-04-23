@@ -100,7 +100,7 @@ PlotTab::PlotTab(QWidget *parent) :
     this->timeSpiNNakerStartBefore = DataProvider::getInstance()->getTimeSpiNNakerStartInMs();
     this->plotStartTime = std::floor((QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0 - this->timeSpiNNakerStartBefore/1000.0) - this->updateFrequency);
     connect(&dataTimer, SIGNAL(timeout()), this, SLOT(realtimeDataSlot()));
-    dataTimer.start(50); // Interval 0 means to refresh as fast as possible
+    dataTimer.start(1000); // 50! Interval 0 means to refresh as fast as possible
 
     /*
     QVector<QCPScatterStyle::ScatterShape> shapes;
