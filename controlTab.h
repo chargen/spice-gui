@@ -36,6 +36,7 @@ private slots:
 
   void toggleMode();
   void setValue(int newValue);
+  void setK0(int newValue);
   void setKp(double newValue);
   void setKi(double newValue);
   void setKd(double newValue);
@@ -55,9 +56,13 @@ private:
     qint64 timeSpiNNakerStartBefore;
 
     int processDataInterval;
+    bool readyToControl;
+    double prev_target_angle;
+    double prev_current_angle;
     double prev_can_time_angle;
     double prev_error;
     double integral;
+    int K0;
     double Kp;
     double Ki;
     double Kd;

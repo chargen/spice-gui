@@ -16,8 +16,11 @@ ControlTab::ControlTab(QWidget *parent) :
     modeAutoTraj = false;
     this->ui->valueEdit->setText(QString::number(this->ui->valueSlider->value()));
     this->ui->valueEdit->setDisabled(true);
+    this->ui->valueEditK0->setText(QString::number(this->ui->valueSliderK0->value()));
+    this->ui->valueEditK0->setDisabled(true);
     connect(ui->toggleButton, SIGNAL(clicked()), this, SLOT(toggleMode()));
     connect(ui->valueSlider, SIGNAL(valueChanged(int)), this, SLOT(setValue(int)));
+    connect(ui->valueSliderK0, SIGNAL(valueChanged(int)), this, SLOT(setK0(int)));
     connect(ui->doubleSpinBoxKp, SIGNAL(valueChanged(double)), this, SLOT(setKp(double)));
     connect(ui->doubleSpinBoxKi, SIGNAL(valueChanged(double)), this, SLOT(setKi(double)));
     connect(ui->doubleSpinBoxKd, SIGNAL(valueChanged(double)), this, SLOT(setKd(double)));
@@ -110,6 +113,14 @@ ControlTab::ControlTab(QWidget *parent) :
     //ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setLineStyle(QCPGraph::lsNone);
     //ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 5));
 
+    ui->controlPlot->addGraph(ui->controlPlot->xAxis, ui->controlPlot->yAxis2);
+    ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setPen(QPen(QBrush(Qt::magenta), 5));
+    ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setName("Target Joint Velocity");
+
+    ui->controlPlot->addGraph(ui->controlPlot->xAxis, ui->controlPlot->yAxis2);
+    ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setPen(QPen(QBrush(Qt::darkMagenta), 5));
+    ui->controlPlot->graph(ui->controlPlot->graphCount()-1)->setName("Current Joint Velocity");
+
     ui->controlPlot->replot(); // needed?
 
     // make left and bottom axes transfer their ranges to right and top axes:
@@ -126,8 +137,13 @@ ControlTab::ControlTab(QWidget *parent) :
     // interval to process data, calculate errors and send data via serial connection to SpiNNaker
     this->processDataInterval = 50;
 
+    this->readyToControl = false;
+    this->prev_target_angle = 0;
+    this->prev_current_angle = 0;
+    this->prev_can_time_angle = 0;
     this->prev_error = 0;
     this->integral = 0;
+    this->setK0(0);
     this->setKp(2.8);
     this->setKi(0.0);
     this->setKd(2.5);
@@ -275,13 +291,14 @@ void ControlTab::sendData()
 {
     //::std::cout << CanDataProvider::getInstance()->getLatestJointDataSet().at(0).s.jointPosition << ::std::endl; 
 
+    bool realCanDataAvailable = CanDataProvider::getInstance()->isStreaming();
     int16_t target_angle = 0;
     int16_t current_angle = CanDataProvider::getInstance()->getLatestJointDataSet().at(0).s.jointPosition;
     double curr_can_time_angle = CanDataProvider::getInstance()->getLatestJointDataSetTimeMicroSec();
 
     if(this->modeAutoTraj)
     {
-        target_angle = 800.0*sin(0.3*QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0); // was 0.2 * before (smaller = slower)
+        target_angle = 700.0*sin(0.1*QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0); // was 0.2 * before (smaller = slower)
         this->ui->valueSlider->setValue(target_angle);
     }
     else
@@ -293,9 +310,23 @@ void ControlTab::sendData()
     int16_t left_error_final = 0;
     int16_t right_error_final = 0;
 
+    int max_ang_vel = 500;
+    int16_t target_ang_vel = 0;
+    int16_t current_ang_vel = 0;
+
     // send out error and control commands via serial interface
-    if(DataProvider::getInstance()->canInterface != NULL && DataProvider::getInstance()->serial->isOpen())
+    if(realCanDataAvailable && DataProvider::getInstance()->serial->isOpen())
     {
+        // routine to ensure that previous valid can data is available in the next iteration
+        if(!this->readyToControl)
+        {
+            this->prev_target_angle = target_angle;
+            this->prev_current_angle = current_angle;
+            this->prev_can_time_angle = curr_can_time_angle;
+            this->readyToControl = true;
+            return;
+        }
+
         // limit target angle (setpoint) to appropriate limits
         if(target_angle < -800)
             target_angle = -800;
@@ -312,20 +343,38 @@ void ControlTab::sendData()
             this->integral = -max_error / this->Ki;
 
         double derivative = (error - this->prev_error)/dt;
+
+        //::std::cout << K0 << " | " << Kp << " | " << error << " | " << Ki << " | " << integral << " | " << Kd << " | " << derivative << ::std::endl;
+
         int error_final = (int)(this->Kp*error + this->Ki*this->integral + this->Kd*derivative);
-        this->prev_error = error;
+
+        //::std::cout << "curr_can_time_angle: " << curr_can_time_angle << "\tthis->prev_can_time_angle: " << this->prev_can_time_angle << "\tdt: " << dt << "\terror_final: " << error_final << ::std::endl;
+
+        target_ang_vel = (double)(target_angle - this->prev_target_angle)/dt;
+        current_ang_vel = (double)(current_angle - this->prev_current_angle)/dt;
+        target_ang_vel = target_ang_vel < -max_ang_vel ? -max_ang_vel : target_ang_vel > max_ang_vel ? max_ang_vel : target_ang_vel;
+        current_ang_vel = current_ang_vel < -max_ang_vel ? -max_ang_vel : current_ang_vel > max_ang_vel ? max_ang_vel : current_ang_vel;
+
+        //::std::cout << "current_angle: " << current_angle << "\tprev_current_angle: " << prev_current_angle << "\tdt: " << dt << ::std::endl;
+        //::std::cout << "target_ang_vel: " << target_ang_vel << "\tcurrent_ang_vel: " << current_ang_vel << ::std::endl;
+
+        this->prev_target_angle = target_angle;
+        this->prev_current_angle = current_angle;
         this->prev_can_time_angle = curr_can_time_angle;
+        this->prev_error = error;
 
         if(error_final < 0)
         {
-            right_error_final = 0;
-            left_error_final = std::min(max_error, -error_final);
+            right_error_final = this->K0;
+            left_error_final = std::min(max_error, -error_final+this->K0);
         }
         else
         {
-            left_error_final = 0;
-            right_error_final = std::min(max_error, error_final);
+            left_error_final = this->K0;
+            right_error_final = std::min(max_error, error_final+this->K0);
         }
+
+        //::std::cout << "left_error_final: " << left_error_final << "\tright_error_final: " << right_error_final << ::std::endl;
 
         /*int16_t curr_min_target_left = target_angle - current_angle;
         if(curr_min_target_left < 0)
@@ -393,6 +442,37 @@ void ControlTab::sendData()
 
         DataProvider::getInstance()->serial->write(data3);
 
+
+        // TODO: needed? but it really hurts here, and slows down everything!!
+        //std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+        /*valueHexString = QString::number(current_ang_vel + max_ang_vel, 16);
+        string = "@FEFFFE33.00000";
+        for(int i=0; i<3-valueHexString.length(); i++)
+            string.append("0");
+        string += valueHexString;
+        string.append("\n");
+        QByteArray data4(string.toStdString().c_str());
+
+        //qDebug() << "errorCurrent2: " << string << " (" << string.length() << ")";
+
+        DataProvider::getInstance()->serial->write(data4);
+
+        // TODO: needed? but it really hurts here, and slows down everything!!
+        //std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+        valueHexString = QString::number(target_ang_vel + max_ang_vel, 16);
+        string = "@FEFFFE34.00000";
+        for(int i=0; i<3-valueHexString.length(); i++)
+            string.append("0");
+        string += valueHexString;
+        string.append("\n");
+        QByteArray data5(string.toStdString().c_str());
+
+        //qDebug() << "errorCurrent2: " << string << " (" << string.length() << ")";
+
+        DataProvider::getInstance()->serial->write(data5);*/
+
         // TODO: needed? but it really hurts here, and slows down everything!!
         //std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
@@ -436,6 +516,8 @@ void ControlTab::sendData()
     this->ui->controlPlot->graph(1)->addData(key, left_error_final);
     this->ui->controlPlot->graph(2)->addData(key, target_angle);
     this->ui->controlPlot->graph(3)->addData(key, current_angle);
+    this->ui->controlPlot->graph(4)->addData(key, target_ang_vel);
+    this->ui->controlPlot->graph(5)->addData(key, current_ang_vel);
 }
 
 void ControlTab::toggleMode()
@@ -457,6 +539,12 @@ void ControlTab::toggleMode()
 void ControlTab::setValue(int newValue)
 {
     this->ui->valueEdit->setText(QString::number(newValue));
+}
+
+void ControlTab::setK0(int newValue)
+{
+    this->K0 = newValue;
+    this->ui->valueEditK0->setText(QString::number(newValue));
 }
 
 void ControlTab::setKp(double newValue)

@@ -14,6 +14,7 @@ class CanDataProvider : public QObject
 public:
     static CanDataProvider* getInstance();
 
+    bool isStreaming();
     std::array<motorDataSet1,MAX_DRIVERS_AND_JOINTS> getLatestMotorDataSet1();
     std::array<motorDataSet2,MAX_DRIVERS_AND_JOINTS> getLatestMotorDataSet2();
     std::array<jointDataSet,MAX_DRIVERS_AND_JOINTS> getLatestJointDataSet();
@@ -21,6 +22,7 @@ public:
     unsigned long getLatestMotorDataSet2TimeMicroSec();
     unsigned long getLatestJointDataSetTimeMicroSec();
 
+    void setStreaming(bool newStreaming);
     void setMotorDataSet1(std::array<motorDataSet1,MAX_DRIVERS_AND_JOINTS>* newMotorDataSet1, unsigned long newMotorDataSet1TimeMicroSec);
     void setMotorDataSet2(std::array<motorDataSet2,MAX_DRIVERS_AND_JOINTS>* newMotorDataSet2, unsigned long newMotorDataSet2TimeMicroSec);
     void setJointDataSet(std::array<jointDataSet,MAX_DRIVERS_AND_JOINTS>* newJointDataSet, unsigned long newJointDataSetTimeMicroSec);
@@ -29,6 +31,9 @@ private:
     static CanDataProvider* canDataProvider;
     explicit CanDataProvider(QObject *parent = 0);
     virtual ~CanDataProvider();
+
+    QMutex mutexStreaming;
+    bool streaming;
 
     QMutex mutexMotorDataSet1;
     std::array<motorDataSet1,MAX_DRIVERS_AND_JOINTS> latestMotorDataSet1;

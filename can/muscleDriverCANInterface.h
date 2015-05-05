@@ -114,6 +114,7 @@ private:
     char rxDataFields[2*MAX_DRIVERS_AND_JOINTS + MAX_DRIVERS_AND_JOINTS] [8];
     float pwm_l;
     float pwm_r;
+    bool currStreaming;
     //signals:
     //    void valueChanged(int newValue);
 

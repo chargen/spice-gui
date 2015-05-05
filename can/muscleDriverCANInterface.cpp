@@ -35,6 +35,7 @@ MuscleDriverCANInterface::MuscleDriverCANInterface(int cycleTimeInMilliSeconds, 
 
     pwm_l = 0.0;
     pwm_r = 0.0;
+    currStreaming = false;
 
     //read init file
     readInit();
@@ -297,7 +298,15 @@ void MuscleDriverCANInterface::cyclicProcessor()
     CanDataProvider::getInstance()->setMotorDataSet1(&motorTransmitData, accutime);
     CanDataProvider::getInstance()->setMotorDataSet2(&motorTransmitAuxData, accutime);
     CanDataProvider::getInstance()->setJointDataSet(&jointData, accutime);
+    if(!currStreaming)
+    {
+        motorCommand[0].s.dutyCycle = 0;
+        motorCommand[1].s.dutyCycle = 0;
+        sendMotorCommands();
 
+        currStreaming = true;
+        CanDataProvider::getInstance()->setStreaming(true);
+    }
 
 
 

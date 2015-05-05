@@ -3,9 +3,9 @@
 CanDataProvider* CanDataProvider::canDataProvider = NULL;
 
 CanDataProvider::CanDataProvider(QObject *parent) :
-    QObject(parent), mutexMotorDataSet1(), mutexMotorDataSet2(), mutexJointDataSet()
+    QObject(parent), mutexStreaming(), mutexMotorDataSet1(), mutexMotorDataSet2(), mutexJointDataSet()
 {
-
+    this->streaming = false;
 }
 
 CanDataProvider::~CanDataProvider()
@@ -18,6 +18,12 @@ CanDataProvider* CanDataProvider::getInstance()
     if(canDataProvider == NULL)
         canDataProvider = new CanDataProvider();
     return canDataProvider;
+}
+
+bool CanDataProvider::isStreaming()
+{
+    QMutexLocker locker(&mutexStreaming);
+    return this->streaming;
 }
 
 std::array<motorDataSet1,MAX_DRIVERS_AND_JOINTS> CanDataProvider::getLatestMotorDataSet1()
@@ -54,6 +60,12 @@ unsigned long CanDataProvider::getLatestJointDataSetTimeMicroSec()
 {
     QMutexLocker locker(&mutexJointDataSet);
     return this->latestJointDataSetTimeMicroSec;
+}
+
+void CanDataProvider::setStreaming(bool newStreaming)
+{
+    QMutexLocker locker(&mutexStreaming);
+    this->streaming = newStreaming;
 }
 
 void CanDataProvider::setMotorDataSet1(std::array<motorDataSet1,MAX_DRIVERS_AND_JOINTS>* newMotorDataSet1, unsigned long newMotorDataSet1TimeMicroSec)
