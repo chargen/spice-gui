@@ -298,7 +298,7 @@ void ControlTab::sendData()
 
     if(this->modeAutoTraj)
     {
-        target_angle = 700.0*sin(0.1*QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0); // was 0.2 * before (smaller = slower)
+        target_angle = 800.0*sin(2*M_PI/30.0*QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0); // was 0.2 * before (smaller = slower)
         this->ui->valueSlider->setValue(target_angle);
     }
     else
@@ -446,7 +446,7 @@ void ControlTab::sendData()
         // TODO: needed? but it really hurts here, and slows down everything!!
         //std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
-        /*valueHexString = QString::number(current_ang_vel + max_ang_vel, 16);
+        valueHexString = QString::number(current_ang_vel + max_ang_vel, 16);
         string = "@FEFFFE33.00000";
         for(int i=0; i<3-valueHexString.length(); i++)
             string.append("0");
@@ -471,7 +471,7 @@ void ControlTab::sendData()
 
         //qDebug() << "errorCurrent2: " << string << " (" << string.length() << ")";
 
-        DataProvider::getInstance()->serial->write(data5);*/
+        DataProvider::getInstance()->serial->write(data5);
 
         // TODO: needed? but it really hurts here, and slows down everything!!
         //std::this_thread::sleep_for(std::chrono::milliseconds(1));

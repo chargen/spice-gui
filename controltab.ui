@@ -14,7 +14,7 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="7">
+   <item row="0" column="8">
     <spacer name="horizontalSpacer">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -34,7 +34,7 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="1" rowspan="3" colspan="7">
+   <item row="2" column="1" rowspan="3" colspan="8">
     <widget class="QCustomPlot" name="controlPlot" native="true"/>
    </item>
    <item row="1" column="1">
@@ -106,7 +106,7 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="4" colspan="3">
+   <item row="0" column="4" colspan="4">
     <widget class="QPushButton" name="toggleButton">
      <property name="text">
       <string>Toggle Auto/Manual-Mode</string>
@@ -147,47 +147,6 @@
      </property>
      <property name="value">
       <double>3.000000000000000</double>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="5">
-    <widget class="QDoubleSpinBox" name="doubleSpinBoxKd">
-     <property name="maximumSize">
-      <size>
-       <width>80</width>
-       <height>16777215</height>
-      </size>
-     </property>
-     <property name="decimals">
-      <number>1</number>
-     </property>
-     <property name="maximum">
-      <double>20.000000000000000</double>
-     </property>
-     <property name="singleStep">
-      <double>0.500000000000000</double>
-     </property>
-     <property name="value">
-      <double>2.500000000000000</double>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="6">
-    <widget class="QDoubleSpinBox" name="doubleSpinBoxKi">
-     <property name="maximumSize">
-      <size>
-       <width>80</width>
-       <height>16777215</height>
-      </size>
-     </property>
-     <property name="decimals">
-      <number>1</number>
-     </property>
-     <property name="maximum">
-      <double>20.000000000000000</double>
-     </property>
-     <property name="singleStep">
-      <double>0.500000000000000</double>
      </property>
     </widget>
    </item>
@@ -250,6 +209,47 @@
      </property>
      <property name="tickInterval">
       <number>100</number>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="6">
+    <widget class="QDoubleSpinBox" name="doubleSpinBoxKd">
+     <property name="maximumSize">
+      <size>
+       <width>80</width>
+       <height>16777215</height>
+      </size>
+     </property>
+     <property name="decimals">
+      <number>1</number>
+     </property>
+     <property name="maximum">
+      <double>20.000000000000000</double>
+     </property>
+     <property name="singleStep">
+      <double>0.500000000000000</double>
+     </property>
+     <property name="value">
+      <double>2.500000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="5">
+    <widget class="QDoubleSpinBox" name="doubleSpinBoxKi">
+     <property name="maximumSize">
+      <size>
+       <width>80</width>
+       <height>16777215</height>
+      </size>
+     </property>
+     <property name="decimals">
+      <number>1</number>
+     </property>
+     <property name="maximum">
+      <double>20.000000000000000</double>
+     </property>
+     <property name="singleStep">
+      <double>0.500000000000000</double>
      </property>
     </widget>
    </item>
