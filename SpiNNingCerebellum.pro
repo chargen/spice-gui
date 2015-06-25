@@ -16,7 +16,6 @@ SOURCES += \
     can/KvaserCanInterface.cpp \
     can/muscleDriverCANInterface.cpp \
     canTab.cpp \
-    can/main-old.cpp \
     dbconnection.cpp \
     canDataProvider.cpp \
     controlTab.cpp \
